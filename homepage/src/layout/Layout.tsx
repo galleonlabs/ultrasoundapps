@@ -6,7 +6,6 @@ export default function Layout() {
   return (
     <>
       <div className="min-h-full bg-[url('./assets/dots.svg')]">
-
         <div className="py-10 ">
           <main>
             <div className=' mx-auto  sm:px-6 lg:px-8 leading-tight  tracking-normal font-wigrum bg-theme-layer-base bg-opacity-50'>
@@ -16,7 +15,6 @@ export default function Layout() {
             </div>
             <div className="mx-auto  sm:px-6 lg:px-8 pb-4 "><Outlet></Outlet></div>
             <div className=' mx-auto  sm:px-6 lg:px-8 leading-tight  tracking-normal font-wigrum bg-theme-layer-base bg-opacity-50'>
-           
               <a href="https://twitter.com/galleonlabs" target="_blank" className=' text-sm   pb-4 hover:text-theme-text-light  leading-tight font-wigrum pl-8'>created by @galleonlabs</a>
             </div>
           </main>

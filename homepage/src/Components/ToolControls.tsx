@@ -2,7 +2,6 @@
 const ToolControls = ({ newTool, handleNewToolChange, addNewTool, newCategory, setNewCategory, addNewCategory, resetLayout, allCategoriesForDropdown }) => {
   return (
     <div className='mt-24 pt-4 pb-6 hidden sm:block border-t border-b border-theme-border-lighter'>
-
       <p className='flex leading-tight font-wigrum text-sm pb-2'>add application</p>
       <input
         type="text"
@@ -40,8 +39,6 @@ const ToolControls = ({ newTool, handleNewToolChange, addNewTool, newCategory, s
         ))}
       </select>
       <button onClick={addNewTool} className="border text-sm border-theme-layer-lightest rounded-sm px-2 py-1 hover:shadow-[1px_1px_0px_#ffffff]">add</button>
-
-
       <p className='flex leading-tight font-wigrum text-sm pb-2 pt-4'>add category</p>
       <input
         type="text"
@@ -50,7 +47,6 @@ const ToolControls = ({ newTool, handleNewToolChange, addNewTool, newCategory, s
         className="border inline-flex text-sm border-theme-layer-lightest bg-theme-layer-lightest text-theme-text-light rounded-sm px-2 py-1 mr-2"
       />
       <button onClick={addNewCategory} className="inline-flex border text-sm border-theme-layer-lightest rounded-sm px-2 py-1 hover:shadow-[1px_1px_0px_#ffffff]">add</button>
-
       <div>
         <span className='text-sm inline-flex mt-4'>
           <button

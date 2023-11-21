@@ -3,7 +3,7 @@ import { classNames } from '../utils/index.tsx';
 // @ts-ignore
 const ToolItem = ({ tool, toggleVisibility, isVisible, handleToolClick }) => {
   const { id, name, logo, affiliateLink, website } = tool;
-
+  
   return (
     <div className="relative flex items-center space-x-3 my-1 rounded-sm bg-gradient-to-r from-theme-layer-lighter to-theme-layer-lightest px-1.5 py-1 group hover:shadow-[1px_1px_0px_#ffffff] border border-theme-layer-lightest">
       <div className="flex-shrink-0">

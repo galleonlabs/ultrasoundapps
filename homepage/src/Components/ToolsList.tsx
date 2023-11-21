@@ -29,15 +29,11 @@ const ToolsList: React.FC = () => {
     const fetchData = async () => {
       const querySnapshot = await getDocs(collection(db, 'tools'));
       const toolsArray = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-      // Retrieve custom tools from local storage
       const customTools = JSON.parse(localStorage.getItem('customTools') || '[]');
-
-      // Combine tools from Firestore with custom tools
       const combinedTools = [...toolsArray, ...customTools];
       processTools(combinedTools);;
-
       const savedVisibility = localStorage.getItem('visibility');
+
       if (savedVisibility) {
         setVisibility(JSON.parse(savedVisibility));
       }
@@ -47,7 +43,6 @@ const ToolsList: React.FC = () => {
     };
 
     fetchData()
-
   }, []);
 
   useEffect(() => {
@@ -65,7 +60,6 @@ const ToolsList: React.FC = () => {
     };
 
     fetchData();
-
   }, [tools]);
 
   useEffect(() => {
@@ -73,7 +67,6 @@ const ToolsList: React.FC = () => {
   }, [visibility]);
 
   const processTools = (toolsArray: any[]) => {
-    // Group tools by category
     const grouped = toolsArray.reduce((acc, tool) => {
       const category = tool.category || 'Uncategorized';
       acc[category] = acc[category] || [];
@@ -96,11 +89,9 @@ const ToolsList: React.FC = () => {
   const toggleVisibility = (id: string) => {
     setVisibility(prev => {
       const newVisibility = { ...prev, [id]: !prev[id] };
-      // Save the updated state to local storage
       localStorage.setItem('visibility', JSON.stringify(newVisibility));
       return newVisibility;
     });
-
   };
 
   const addNewCategory = () => {
@@ -108,7 +99,7 @@ const ToolsList: React.FC = () => {
       const updatedCategories = [...customCategories, newCategory];
       setCustomCategories(updatedCategories);
       localStorage.setItem('customCategories', JSON.stringify(updatedCategories));
-      setNewCategory(''); // Reset input field
+      setNewCategory(''); /
     }
   };
 
@@ -146,7 +137,7 @@ const ToolsList: React.FC = () => {
         if (data.customCategories) {
           setCustomCategories(data.customCategories);
         }
-        // Update local storage with loaded settings
+
         localStorage.setItem('customTools', JSON.stringify(data.customTools || []));
         localStorage.setItem('customCategories', JSON.stringify(data.customCategories || []));
       };
@@ -174,17 +165,14 @@ const ToolsList: React.FC = () => {
   };
 
   const resetLayout = () => {
-    // Clear local storage items
     localStorage.removeItem('visibility');
     localStorage.removeItem('customTools');
     localStorage.removeItem('customCategories');
 
-    // Reset state to initial values
-    setTools([]); // Assuming you have some default value for tools
+    setTools([]);
     setVisibility({});
     setGroupedTools({});
     setCustomCategories([]);
-    // Any other state that needs resetting
     window.location.reload();
   };
 
@@ -196,7 +184,6 @@ const ToolsList: React.FC = () => {
           <input className='cursor-pointer' type="file" onChange={loadSettings} />
         </span>
       </div>
-
       <div className="text-theme-text-base pt-8 gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
         {allCategories.map(category => (
           <div key={category} className="mb-4 border-l border-theme-border-lighter pl-4">
@@ -215,7 +202,6 @@ const ToolsList: React.FC = () => {
           </div>
         ))}
       </div>
-
       <div>
         <p className=' text-md flex leading-tight font-wigrum pt-8'>hidden apps
 
@@ -230,12 +216,8 @@ const ToolsList: React.FC = () => {
               classNames('group  ml-2 translate-y-1 flex w-4 h-4 border-0 hover:text-theme-layer-lighter hover:cursor-pointer  items-center justify-center text-theme-white ')
             }
           ></ArrowDownCircleIcon>}
-
         </p>
-
-
         {hiddens ? <div className="   text-theme-text-base pt-8 gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-
           {allCategories.map(category => (
             <div key={category} className="mb-4 border-l border-theme-border-lighter pl-4">
               <h2 className="text-md mb-4 lowercase">{category}</h2>
@@ -253,10 +235,7 @@ const ToolsList: React.FC = () => {
             </div>
           ))}
         </div> : <></>}
-
       </div>
-
-
       <ToolControls
         newTool={newTool}
         handleNewToolChange={handleNewToolChange}
@@ -267,10 +246,7 @@ const ToolsList: React.FC = () => {
         resetLayout={resetLayout}
         allCategoriesForDropdown={allCategoriesForDropdown}
       />
-
-
     </div>
-
   );
 };
 
