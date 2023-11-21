@@ -1,0 +1,11 @@
+{
+  "projects": {
+    "default": "hedgedhedgieapp"
+  },
+  "targets": {},
+  "etags": {
+    "hedgedhedgieapp": {
+      "extensionInstances": {}
+    }
+  }
+}
