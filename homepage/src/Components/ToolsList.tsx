@@ -99,7 +99,7 @@ const ToolsList: React.FC = () => {
       const updatedCategories = [...customCategories, newCategory];
       setCustomCategories(updatedCategories);
       localStorage.setItem('customCategories', JSON.stringify(updatedCategories));
-      setNewCategory(''); /
+      setNewCategory(''); 
     }
   };
 

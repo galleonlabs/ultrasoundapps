@@ -6,7 +6,7 @@ const ToolControls = ({ newTool, handleNewToolChange, addNewTool, newCategory, s
       <input
         type="text"
         name="name"
-        placeholder="Website name"
+        placeholder="website name"
         value={newTool.name}
         onChange={handleNewToolChange}
         className="border text-sm border-theme-layer-lightest bg-theme-layer-lightest text-theme-text-light rounded-sm px-2 py-1 mr-2"
