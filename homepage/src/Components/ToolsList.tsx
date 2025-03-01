@@ -8,31 +8,72 @@ import { ArrowDownCircleIcon, ArrowUpCircleIcon, AdjustmentsHorizontalIcon, Book
 import ToolItem from './ToolItem';
 import ToolControls from './ToolControls';
 
+// Define proper types
+interface Tool {
+  id: string;
+  name: string;
+  logo: string;
+  affiliateLink?: string;
+  website: string;
+  upvotes?: number;
+  category: string;
+}
+
+interface SavedLayout {
+  name: string;
+  data: string;
+}
+
 const ToolsList: React.FC = () => {
-  // state declarations
-  const [tools, setTools] = useState<any[]>([]);
-  const initialVisibility = JSON.parse(localStorage.getItem('visibility') || '{}');
+  // state declarations with proper types
+  const [tools, setTools] = useState<Tool[]>([]);
+  const initialVisibility = useMemo(() => JSON.parse(localStorage.getItem('visibility') || '{}'), []);
   const [visibility, setVisibility] = useState<Record<string, boolean>>(initialVisibility);
-  const [groupedTools, setGroupedTools] = useState<Record<string, any[]>>({});
+  const [groupedTools, setGroupedTools] = useState<Record<string, Tool[]>>({});
   const [hiddens, setHiddens] = useState<boolean>(false);
   const [showControls, setShowControls] = useState<boolean>(false);
-  const [newTool, setNewTool] = useState({ name: '', logo: '', website: '', category: '' });
+  const [newTool, setNewTool] = useState<Omit<Tool, 'id' | 'upvotes'>>({ 
+    name: '', 
+    logo: '', 
+    website: '', 
+    category: '' 
+  });
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [savedLayouts, setSavedLayouts] = useState<{name: string, data: string}[]>(
+  const [savedLayouts, setSavedLayouts] = useState<SavedLayout[]>(
     JSON.parse(localStorage.getItem('savedLayouts') || '[]')
   );
   const [favorites, setFavorites] = useState<Record<string, boolean>>(
-    JSON.parse(localStorage.getItem('favorites') || '{}')
+    JSON.parse(localStorage.getItem('favorites') || '[]')
   );
 
-  // combining categories
-  // const allCategories = [...Object.keys(groupedTools), ...customCategories.filter(cat => !groupedTools.hasOwnProperty(cat))];
-  const allCategoriesForDropdown = [...new Set([...Object.keys(groupedTools), ...customCategories])];
+  // Memoized categories to prevent re-renders
+  const allCategoriesForDropdown = useMemo(() => 
+    [...new Set([...Object.keys(groupedTools), ...customCategories])], 
+    [groupedTools, customCategories]
+  );
 
+  // Process tools with proper typing
+  const processTools = useCallback((toolsArray: Tool[]) => {
+    const grouped: Record<string, Tool[]> = toolsArray.reduce((acc: Record<string, Tool[]>, tool) => {
+      const category = tool.category || "Uncategorized";
+      acc[category] = acc[category] || [];
+      acc[category].push(tool);
+      return acc;
+    }, {});
+
+    // Sort each category by upvotes
+    for (const category in grouped) {
+      grouped[category].sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
+    }
+
+    setTools(toolsArray);
+    setGroupedTools(grouped);
+    }, []);
+  
   useEffect(() => {
     logEvent(analytics, 'page_view', { page_path: '/' });
 
@@ -65,7 +106,7 @@ const ToolsList: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+  }, [processTools]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -87,22 +128,6 @@ const ToolsList: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('visibility', JSON.stringify(visibility));
   }, [visibility]);
-
-  const processTools = useCallback((toolsArray: any[]) => {
-    const grouped = toolsArray.reduce((acc, tool) => {
-      const category = tool.category || 'Uncategorized';
-      acc[category] = acc[category] || [];
-      acc[category].push(tool);
-      return acc;
-    }, {});
-
-    for (let category in grouped) {
-      grouped[category].sort((a: any, b: any) => b.upvotes - a.upvotes);
-    }
-
-    setTools(toolsArray);
-    setGroupedTools(grouped);
-  }, []);
 
   const handleToolClick = (toolName: string) => {
     logEvent(analytics, 'select_tool', { name: toolName });
@@ -291,8 +316,7 @@ const ToolsList: React.FC = () => {
       const lowerSearchTerm = searchTerm.toLowerCase();
       Object.keys(result).forEach(category => {
         result[category] = result[category].filter(tool => 
-          tool.name.toLowerCase().includes(lowerSearchTerm) || 
-          (tool.description && tool.description.toLowerCase().includes(lowerSearchTerm))
+          tool.name.toLowerCase().includes(lowerSearchTerm) 
         );
       });
     }
@@ -312,7 +336,7 @@ const ToolsList: React.FC = () => {
   }, [filteredTools]);
 
   return (
-    <div className='pt-4'>
+    <div className="pt-4">
       {isLoading ? (
         <div className="flex items-center justify-center min-h-[200px]">
           <div className="animate-pulse flex space-x-4">
@@ -326,9 +350,9 @@ const ToolsList: React.FC = () => {
       ) : (
         <>
           {/* Control Bar */}
-          <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-theme-layer-darker bg-opacity-30 p-4 rounded-sm border border-theme-border-lighter'>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-theme-layer-darker bg-opacity-30 p-4 rounded-sm border border-theme-border-lighter">
             {/* Search Bar */}
-            <div className='flex items-center mb-4 sm:mb-0 w-full sm:w-auto'>
+            <div className="flex items-center mb-4 sm:mb-0 w-full sm:w-auto">
               <input
                 type="text"
                 placeholder="Search tools..."
@@ -337,43 +361,39 @@ const ToolsList: React.FC = () => {
                 className="border text-sm border-theme-layer-lightest bg-theme-layer-lighter bg-opacity-50 text-theme-text-light rounded-sm px-2 py-1 mr-2 w-full sm:w-64"
               />
               {searchTerm && (
-                <button 
-                  onClick={() => setSearchTerm('')} 
-                  className="text-theme-text-dark hover:text-theme-text-light"
-                >
-                  <span className="sr-only">Clear</span>
-                  ×
+                <button onClick={() => setSearchTerm("")} className="text-theme-text-dark hover:text-theme-text-light">
+                  <span className="sr-only">Clear</span>×
                 </button>
               )}
             </div>
-            
+
             {/* Control Buttons */}
-            <div className='flex flex-wrap gap-2'>
-              <button 
-                className='border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm flex items-center'
+            <div className="flex flex-wrap gap-2">
+              <button
+                className="border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm flex items-center"
                 onClick={() => setShowControls(!showControls)}
               >
                 <AdjustmentsHorizontalIcon className="w-4 h-4 mr-1" />
                 <span>Edit</span>
               </button>
-              
-              <button 
-                className='border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm flex items-center'
+
+              <button
+                className="border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm flex items-center"
                 onClick={() => saveSettings()}
               >
                 <BookmarkIcon className="w-4 h-4 mr-1" />
                 <span>Export</span>
               </button>
-              
-              <div className='relative inline-block'>
-                <span className='flex border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm'>
+
+              <div className="relative inline-block">
+                <span className="flex border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm">
                   <span className="flex items-center mr-2">Import</span>
-                  <input className='cursor-pointer w-16' type="file" onChange={loadSettings} />
+                  <input className="cursor-pointer w-24" type="file" onChange={loadSettings} />
                 </span>
               </div>
-              
-              <button 
-                className='border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm flex items-center text-theme-red'
+
+              <button
+                className="border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm flex items-center text-theme-red"
                 onClick={resetLayout}
               >
                 <ArrowPathIcon className="w-4 h-4 mr-1" />
@@ -381,22 +401,25 @@ const ToolsList: React.FC = () => {
               </button>
             </div>
           </div>
-          
+
           {/* Saved Layouts */}
           {savedLayouts.length > 0 && (
             <div className="mb-6 border-b border-theme-border-lighter pb-4">
               <h3 className="text-md mb-3 font-medium">Saved Layouts</h3>
               <div className="flex flex-wrap gap-2">
                 {savedLayouts.map((layout, index) => (
-                  <div key={index} className="border border-theme-border-lighter rounded-sm px-3 py-1 flex items-center bg-theme-layer-darker">
-                    <button 
-                      onClick={() => loadLayout(layout.data)} 
+                  <div
+                    key={index}
+                    className="border border-theme-border-lighter rounded-sm px-3 py-1 flex items-center bg-theme-layer-darker"
+                  >
+                    <button
+                      onClick={() => loadLayout(layout.data)}
                       className="text-sm hover:text-theme-text-light mr-2"
                     >
                       {layout.name}
                     </button>
-                    <button 
-                      onClick={() => deleteLayout(index)} 
+                    <button
+                      onClick={() => deleteLayout(index)}
                       className="text-xs text-theme-text-dark hover:text-theme-red"
                     >
                       ×
@@ -406,22 +429,32 @@ const ToolsList: React.FC = () => {
               </div>
             </div>
           )}
-          
-          {/* Category Tabs */}
+
+          {/* Category Tabs - Optimized for touch and better scrolling */}
           {filteredCategories.length > 0 && (
-            <div className="mb-6 border-b border-theme-border-lighter">
-              <div className="flex overflow-x-auto pb-2 scrollbar-hide">
-                <button 
-                  className={`mr-3 px-3 py-1 text-sm whitespace-nowrap ${activeCategory === null ? 'text-theme-text-light border-b-2 border-theme-text-light' : 'text-theme-text-dark hover:text-theme-text-base'}`}
+            <div className="mb-4 sm:mb-6 border-b border-theme-border-lighter">
+              <div className="flex overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                <button
+                  className={`mr-3 px-3 py-2 text-sm whitespace-nowrap rounded-t-sm ${
+                    activeCategory === null
+                      ? "text-theme-text-light border-b-2 border-theme-text-light font-medium"
+                      : "text-theme-text-dark hover:text-theme-text-base"
+                  }`}
                   onClick={() => setActiveCategory(null)}
+                  aria-pressed={activeCategory === null}
                 >
                   All Categories
                 </button>
-                {filteredCategories.map(category => (
-                  <button 
-                    key={category} 
-                    className={`mr-3 px-3 py-1 text-sm whitespace-nowrap ${activeCategory === category ? 'text-theme-text-light border-b-2 border-theme-text-light' : 'text-theme-text-dark hover:text-theme-text-base'}`}
+                {filteredCategories.map((category) => (
+                  <button
+                    key={category}
+                    className={`mr-3 px-3 py-2 text-sm whitespace-nowrap rounded-t-sm ${
+                      activeCategory === category
+                        ? "text-theme-text-light border-b-2 border-theme-text-light font-medium"
+                        : "text-theme-text-dark hover:text-theme-text-base"
+                    }`}
                     onClick={() => setActiveCategory(activeCategory === category ? null : category)}
+                    aria-pressed={activeCategory === category}
                   >
                     {category}
                   </button>
@@ -429,67 +462,76 @@ const ToolsList: React.FC = () => {
               </div>
             </div>
           )}
-          
-          {/* Main Grid */}
-          <div className="text-theme-text-base gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-            {filteredCategories.map((category, index) => (
-              <div key={category} className={`mb-6 border-l border-theme-border-lighter pl-4 fade-in-delay-${index % 3 + 1}`}>
-                <h2 className="text-md mb-4 lowercase">{category}</h2>
+
+          {/* Main Grid - optimized for all screen sizes */}
+          <div className="text-theme-text-base gap-3 sm:gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+            {filteredCategories.map((category) => (
+              <div key={category} className="mb-6 border-l border-theme-border-lighter pl-3 sm:pl-4">
+                <h2 className="text-md mb-3 sm:mb-4 lowercase font-medium">{category}</h2>
                 <div className="space-y-2">
-                  {(filteredTools[category] || []).filter(x => !visibility[x.id]).map((tool, _) => (
-                    <ToolItem
-                      key={tool.id}
-                      tool={tool}
-                      toggleVisibility={toggleVisibility}
-                      isVisible={!visibility[tool.id]}
-                      handleToolClick={handleToolClick}
-                      handleFavorite={handleFavorite}
-                      isFavorited={favorites[tool.id]}
-                    />
-                  ))}
+                  {(filteredTools[category] || [])
+                    .filter((x) => !visibility[x.id])
+                    .map((tool) => (
+                      <ToolItem
+                        key={tool.id}
+                        tool={tool}
+                        toggleVisibility={toggleVisibility}
+                        isVisible={!visibility[tool.id]}
+                        handleToolClick={handleToolClick}
+                        handleFavorite={handleFavorite}
+                        isFavorited={favorites[tool.id]}
+                      />
+                    ))}
                 </div>
               </div>
             ))}
           </div>
-          
+
           {/* Hidden Apps Section */}
           <div>
-            <p className='text-md flex leading-tight font-wigrum pt-6 pb-2 border-t border-theme-border-lighter'>
+            <p className="text-md flex leading-tight font-wigrum pt-6 pb-2 border-t border-theme-border-lighter">
               hidden apps
-              {hiddens ? 
+              {hiddens ? (
                 <ArrowUpCircleIcon
                   onClick={() => setHiddens(!hiddens)}
-                  className={classNames('group ml-2 translate-y-1 flex w-4 h-4 border-0 hover:text-theme-layer-lighter hover:cursor-pointer items-center justify-center text-theme-white')}
-                /> : 
+                  className={classNames(
+                    "group ml-2 translate-y-1 flex w-4 h-4 border-0 hover:text-gray-400 hover:cursor-pointer items-center justify-center text-theme-white"
+                  )}
+                />
+              ) : (
                 <ArrowDownCircleIcon
                   onClick={() => setHiddens(!hiddens)}
-                  className={classNames('group ml-2 translate-y-1 flex w-4 h-4 border-0 hover:text-theme-layer-lighter hover:cursor-pointer items-center justify-center text-theme-white')}
+                  className={classNames(
+                    "group ml-2 translate-y-1 flex w-4 h-4 border-0 hover:text-gray-400 hover:cursor-pointer items-center justify-center text-theme-white"
+                  )}
                 />
-              }
+              )}
             </p>
-            
+
             {hiddens && (
               <div className="text-theme-text-base pt-4 gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-                {filteredCategories.map(category => (
+                {filteredCategories.map((category) => (
                   <div key={category} className="mb-4 border-l border-theme-border-lighter pl-4">
                     <h2 className="text-md mb-4 lowercase">{category}</h2>
                     <div className="space-y-2">
-                      {(filteredTools[category] || []).filter(x => visibility[x.id]).map(tool => (
-                        <ToolItem
-                          key={tool.id}
-                          tool={tool}
-                          toggleVisibility={toggleVisibility}
-                          isVisible={!visibility[tool.id]}
-                          handleToolClick={handleToolClick}
-                        />
-                      ))}
+                      {(filteredTools[category] || [])
+                        .filter((x) => visibility[x.id])
+                        .map((tool) => (
+                          <ToolItem
+                            key={tool.id}
+                            tool={tool}
+                            toggleVisibility={toggleVisibility}
+                            isVisible={!visibility[tool.id]}
+                            handleToolClick={handleToolClick}
+                          />
+                        ))}
                     </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
-          
+
           {/* Controls Section */}
           {showControls && (
             <ToolControls

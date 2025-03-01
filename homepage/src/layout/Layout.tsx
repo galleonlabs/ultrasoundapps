@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { Outlet } from "react-router-dom";
 import './Layout.css';
 
@@ -25,28 +25,16 @@ function getDaySuffix(day: number): string {
 }
 
 export default function Layout() {
-  const [loaded, setLoaded] = useState(false);
-  
-  useEffect(() => {
-    // Add a small delay to show smooth loading transition
-    const timer = setTimeout(() => {
-      setLoaded(true);
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }, []);
+  // Memoize the date to prevent unnecessary re-renders
+  const formattedDate = useMemo(() => formatDate(new Date()), []);
 
   return (
     <>
-      <div
-        className={`min-h-full bg-[url('./assets/dots.svg')] transition-opacity duration-500 ${
-          loaded ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        <div className="py-8">
+      <div className="min-h-full bg-[url('./assets/dots.svg')]">
+        <div className="py-6 md:py-8">
           <main>
-            <div className="mx-auto sm:px-6 lg:px-8 leading-tight tracking-normal font-wigrum bg-theme-layer-base bg-opacity-50">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 py-3">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8 leading-tight tracking-normal font-wigrum bg-theme-layer-base bg-opacity-50">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3">
                 <div>
                   <h1 className="text-lg font-semibold text-theme-text-light">ultra sound apps</h1>
                   <p className="text-md leading-tight font-wigrum text-theme-text-base">
@@ -54,24 +42,25 @@ export default function Layout() {
                   </p>
                 </div>
                 <div className="mt-3 sm:mt-0 text-xs text-theme-text-dark">
-                  <span className="hidden sm:inline-block px-2 py-1 rounded-sm bg-theme-layer-lighter bg-opacity-30 border border-theme-border-lighter">
-                    {formatDate(new Date())}
+                  <span className="inline-block px-2 py-1 rounded-sm bg-theme-layer-lighter bg-opacity-30 border border-theme-border-lighter">
+                    {formattedDate}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="mx-auto sm:px-6 lg:px-8 pb-4">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8 pb-4">
               <Outlet />
             </div>
 
-            <div className="mx-auto sm:px-6 lg:px-8 leading-tight tracking-normal font-wigrum bg-theme-layer-base bg-opacity-50 py-3">
-              <div className="flex justify-between items-center px-4">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8 leading-tight tracking-normal font-wigrum bg-theme-layer-base bg-opacity-50 py-3">
+              <div className="flex justify-between items-center">
                 <a
                   href="https://twitter.com/davyjones0x"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm hover:text-theme-text-light leading-tight font-wigrum flex items-center"
+                  aria-label="Twitter profile of creator davyjones0x"
                 >
                   <span>created by @davyjones0x</span>
                 </a>
