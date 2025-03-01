@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { collection, getDocs, doc, updateDoc, increment } from 'firebase/firestore';
 import { db, analytics } from '../main.tsx';
 import './ToolsList.css'
 import { logEvent } from "firebase/analytics";
 import { classNames } from '../utils/index.tsx';
-import { ArrowDownCircleIcon, ArrowUpCircleIcon } from '@heroicons/react/20/solid';
+import { ArrowDownCircleIcon, ArrowUpCircleIcon, AdjustmentsHorizontalIcon, BookmarkIcon, ArrowPathIcon } from '@heroicons/react/20/solid';
 import ToolItem from './ToolItem';
 import ToolControls from './ToolControls';
 
@@ -15,34 +15,56 @@ const ToolsList: React.FC = () => {
   const [visibility, setVisibility] = useState<Record<string, boolean>>(initialVisibility);
   const [groupedTools, setGroupedTools] = useState<Record<string, any[]>>({});
   const [hiddens, setHiddens] = useState<boolean>(false);
+  const [showControls, setShowControls] = useState<boolean>(false);
   const [newTool, setNewTool] = useState({ name: '', logo: '', website: '', category: '' });
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [savedLayouts, setSavedLayouts] = useState<{name: string, data: string}[]>(
+    JSON.parse(localStorage.getItem('savedLayouts') || '[]')
+  );
+  const [favorites, setFavorites] = useState<Record<string, boolean>>(
+    JSON.parse(localStorage.getItem('favorites') || '{}')
+  );
 
   // combining categories
-  const allCategories = [...Object.keys(groupedTools), ...customCategories.filter(cat => !groupedTools.hasOwnProperty(cat))];
+  // const allCategories = [...Object.keys(groupedTools), ...customCategories.filter(cat => !groupedTools.hasOwnProperty(cat))];
   const allCategoriesForDropdown = [...new Set([...Object.keys(groupedTools), ...customCategories])];
 
   useEffect(() => {
     logEvent(analytics, 'page_view', { page_path: '/' });
 
     const fetchData = async () => {
-      const querySnapshot = await getDocs(collection(db, 'tools'));
-      const toolsArray = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const customTools = JSON.parse(localStorage.getItem('customTools') || '[]');
-      const combinedTools = [...toolsArray, ...customTools];
-      processTools(combinedTools);;
-      const savedVisibility = localStorage.getItem('visibility');
+      setIsLoading(true);
+      try {
+        const querySnapshot = await getDocs(collection(db, 'tools'));
+        const toolsArray = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const customTools = JSON.parse(localStorage.getItem('customTools') || '[]');
+        const combinedTools = [...toolsArray, ...customTools];
+        processTools(combinedTools);
+        
+        const savedVisibility = localStorage.getItem('visibility');
+        if (savedVisibility) {
+          setVisibility(JSON.parse(savedVisibility));
+        }
 
-      if (savedVisibility) {
-        setVisibility(JSON.parse(savedVisibility));
+        const savedCustomCategories = JSON.parse(localStorage.getItem('customCategories') || '[]');
+        setCustomCategories(savedCustomCategories);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        // Fallback to local data only if Firestore fails
+        const customTools = JSON.parse(localStorage.getItem('customTools') || '[]');
+        if (customTools.length > 0) {
+          processTools(customTools);
+        }
+      } finally {
+        setIsLoading(false);
       }
-
-      const savedCustomCategories = JSON.parse(localStorage.getItem('customCategories') || '[]');
-      setCustomCategories(savedCustomCategories);
     };
 
-    fetchData()
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -66,7 +88,7 @@ const ToolsList: React.FC = () => {
     localStorage.setItem('visibility', JSON.stringify(visibility));
   }, [visibility]);
 
-  const processTools = (toolsArray: any[]) => {
+  const processTools = useCallback((toolsArray: any[]) => {
     const grouped = toolsArray.reduce((acc, tool) => {
       const category = tool.category || 'Uncategorized';
       acc[category] = acc[category] || [];
@@ -80,10 +102,60 @@ const ToolsList: React.FC = () => {
 
     setTools(toolsArray);
     setGroupedTools(grouped);
-  };
+  }, []);
 
   const handleToolClick = (toolName: string) => {
     logEvent(analytics, 'select_tool', { name: toolName });
+  };
+  
+  useEffect(() => {
+    // Save favorites to localStorage whenever they change
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+  }, [favorites]);
+  
+  const handleFavorite = async (toolId: string) => {
+    try {
+      // Toggle favorite status
+      const isFavorited = favorites[toolId];
+      const newFavorites = { ...favorites, [toolId]: !isFavorited };
+      setFavorites(newFavorites);
+      
+      // Only update Firestore for non-custom tools
+      if (!toolId.startsWith('custom-')) {
+        // Get the current tool
+        const toolRef = doc(db, 'tools', toolId);
+        
+        // Increment or decrement upvotes in Firestore
+        await updateDoc(toolRef, {
+          upvotes: increment(isFavorited ? -1 : 1)
+        });
+        
+        // Update local state
+        setTools(prevTools => 
+          prevTools.map(tool => 
+            tool.id === toolId 
+              ? { ...tool, upvotes: (tool.upvotes || 0) + (isFavorited ? -1 : 1) } 
+              : tool
+          )
+        );
+      } else {
+        // For custom tools, just update local state
+        setTools(prevTools => 
+          prevTools.map(tool => 
+            tool.id === toolId 
+              ? { ...tool, upvotes: (tool.upvotes || 0) + (isFavorited ? -1 : 1) } 
+              : tool
+          )
+        );
+      }
+      
+      // Log the favorite action
+      logEvent(analytics, isFavorited ? 'unfavorite_tool' : 'favorite_tool', { tool_id: toolId });
+    } catch (error) {
+      console.error('Error updating favorites:', error);
+      // Revert the change in favorites if there's an error
+      setFavorites(prev => ({ ...prev, [toolId]: prev[toolId] }));
+    }
   };
 
   const toggleVisibility = (id: string) => {
@@ -103,7 +175,7 @@ const ToolsList: React.FC = () => {
     }
   };
 
-  const saveSettings = () => {
+  const saveSettings = (layoutName?: string) => {
     const customTools = tools.filter(tool => tool.id.startsWith('custom-'));
     const settings = {
       visibility,
@@ -111,6 +183,17 @@ const ToolsList: React.FC = () => {
       customCategories
     };
     const data = JSON.stringify(settings);
+    
+    // Save to local storage with name if provided
+    if (layoutName) {
+      const newLayout = { name: layoutName, data: data };
+      const updatedLayouts = [...savedLayouts, newLayout];
+      setSavedLayouts(updatedLayouts);
+      localStorage.setItem('savedLayouts', JSON.stringify(updatedLayouts));
+      return;
+    }
+    
+    // Download file to users computer
     const blob = new Blob([data], { type: 'application/json' });
     const href = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -119,6 +202,28 @@ const ToolsList: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(href); // Clean up
+  };
+
+  const loadLayout = (layoutData: string) => {
+    try {
+      const data = JSON.parse(layoutData);
+      if (data.visibility) {
+        setVisibility(data.visibility);
+      }
+      if (data.customTools) {
+        const combinedTools = [...tools.filter(tool => !tool.id.startsWith('custom-')), ...data.customTools];
+        setTools(combinedTools);
+      }
+      if (data.customCategories) {
+        setCustomCategories(data.customCategories);
+      }
+
+      localStorage.setItem('customTools', JSON.stringify(data.customTools || []));
+      localStorage.setItem('customCategories', JSON.stringify(data.customCategories || []));
+    } catch (error) {
+      console.error("Error loading layout:", error);
+    }
   };
 
   const loadSettings = (event: any) => {
@@ -126,23 +231,22 @@ const ToolsList: React.FC = () => {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e: any) => {
-        const data = JSON.parse(e.target.result);
-        if (data.visibility) {
-          setVisibility(data.visibility);
+        try {
+          const layoutData = e.target.result;
+          loadLayout(layoutData);
+        } catch (error) {
+          console.error("Error reading file:", error);
         }
-        if (data.customTools) {
-          const combinedTools = [...tools.filter(tool => !tool.id.startsWith('custom-')), ...data.customTools];
-          setTools(combinedTools);
-        }
-        if (data.customCategories) {
-          setCustomCategories(data.customCategories);
-        }
-
-        localStorage.setItem('customTools', JSON.stringify(data.customTools || []));
-        localStorage.setItem('customCategories', JSON.stringify(data.customCategories || []));
       };
       reader.readAsText(file);
     }
+  };
+  
+  const deleteLayout = (index: number) => {
+    const updatedLayouts = [...savedLayouts];
+    updatedLayouts.splice(index, 1);
+    setSavedLayouts(updatedLayouts);
+    localStorage.setItem('savedLayouts', JSON.stringify(updatedLayouts));
   };
 
   const handleNewToolChange = (e: any) => {
@@ -165,87 +269,243 @@ const ToolsList: React.FC = () => {
   };
 
   const resetLayout = () => {
-    localStorage.removeItem('visibility');
-    localStorage.removeItem('customTools');
-    localStorage.removeItem('customCategories');
+    if (window.confirm('Are you sure you want to reset your layout? This will remove all custom tools, categories, and visibility settings.')) {
+      localStorage.removeItem('visibility');
+      localStorage.removeItem('customTools');
+      localStorage.removeItem('customCategories');
 
-    setTools([]);
-    setVisibility({});
-    setGroupedTools({});
-    setCustomCategories([]);
-    window.location.reload();
+      setTools([]);
+      setVisibility({});
+      setGroupedTools({});
+      setCustomCategories([]);
+      window.location.reload();
+    }
   };
+  
+  // Filter tools based on search term and active category
+  const filteredTools = useMemo(() => {
+    let result = {...groupedTools};
+    
+    // Filter by search term if provided
+    if (searchTerm.trim()) {
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      Object.keys(result).forEach(category => {
+        result[category] = result[category].filter(tool => 
+          tool.name.toLowerCase().includes(lowerSearchTerm) || 
+          (tool.description && tool.description.toLowerCase().includes(lowerSearchTerm))
+        );
+      });
+    }
+    
+    // Filter by active category if selected
+    if (activeCategory) {
+      const categoryTools = result[activeCategory] || [];
+      result = { [activeCategory]: categoryTools };
+    }
+    
+    return result;
+  }, [groupedTools, searchTerm, activeCategory]);
+  
+  // Calculate filtered categories that have at least one visible tool
+  const filteredCategories = useMemo(() => {
+    return Object.keys(filteredTools).filter(category => filteredTools[category].length > 0);
+  }, [filteredTools]);
 
   return (
-    <div className='pt-4 '>
-      <div className='sm:flex text-sm mb-8 hidden'>
-        <button className='border hover:shadow-[1px_1px_0px_#ffffff]  border-theme-layer-lightest rounded-sm px-2 py-1 mr-4' onClick={saveSettings}>download layout</button>
-        <span className='flex border hover:shadow-[1px_1px_0px_#ffffff]  border-theme-layer-lightest rounded-sm px-2 py-1'>    <span className="flex select-none items-center ml-1.5 mr-3">upload layout</span>
-          <input className='cursor-pointer' type="file" onChange={loadSettings} />
-        </span>
-      </div>
-      <div className="text-theme-text-base pt-8 gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-        {allCategories.map(category => (
-          <div key={category} className="mb-4 border-l border-theme-border-lighter pl-4">
-            <h2 className="text-md mb-4 lowercase">{category}</h2>
-            <div>
-              {(groupedTools[category] || []).filter(x => !visibility[x.id]).map(tool => (
-                <ToolItem
-                  key={tool.id}
-                  tool={tool}
-                  toggleVisibility={toggleVisibility}
-                  isVisible={!visibility[tool.id]}
-                  handleToolClick={handleToolClick}
-                />
-              ))}
+    <div className='pt-4'>
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-[200px]">
+          <div className="animate-pulse flex space-x-4">
+            <div className="h-12 w-12 bg-theme-layer-lighter rounded-full"></div>
+            <div className="space-y-4 flex-1">
+              <div className="h-4 bg-theme-layer-lighter rounded w-3/4"></div>
+              <div className="h-4 bg-theme-layer-lighter rounded w-1/2"></div>
             </div>
           </div>
-        ))}
-      </div>
-      <div>
-        <p className=' text-md flex leading-tight font-wigrum pt-8'>hidden apps
-
-          {hiddens ? <ArrowUpCircleIcon
-            onClick={() => setHiddens(!hiddens)}
-            className={
-              classNames('group  ml-2 translate-y-1 flex w-4 h-4 border-0 hover:text-theme-layer-lighter hover:cursor-pointer  items-center justify-center text-theme-white ')
-            }
-          ></ArrowUpCircleIcon> : <ArrowDownCircleIcon
-            onClick={() => setHiddens(!hiddens)}
-            className={
-              classNames('group  ml-2 translate-y-1 flex w-4 h-4 border-0 hover:text-theme-layer-lighter hover:cursor-pointer  items-center justify-center text-theme-white ')
-            }
-          ></ArrowDownCircleIcon>}
-        </p>
-        {hiddens ? <div className="   text-theme-text-base pt-8 gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-          {allCategories.map(category => (
-            <div key={category} className="mb-4 border-l border-theme-border-lighter pl-4">
-              <h2 className="text-md mb-4 lowercase">{category}</h2>
-              <div>
-                {(groupedTools[category] || []).filter(x => visibility[x.id]).map(tool => (
-                  <ToolItem
-                    key={tool.id}
-                    tool={tool}
-                    toggleVisibility={toggleVisibility}
-                    isVisible={!visibility[tool.id]}
-                    handleToolClick={handleToolClick}
-                  />
+        </div>
+      ) : (
+        <>
+          {/* Control Bar */}
+          <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-theme-layer-darker bg-opacity-30 p-4 rounded-sm border border-theme-border-lighter'>
+            {/* Search Bar */}
+            <div className='flex items-center mb-4 sm:mb-0 w-full sm:w-auto'>
+              <input
+                type="text"
+                placeholder="Search tools..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="border text-sm border-theme-layer-lightest bg-theme-layer-lighter bg-opacity-50 text-theme-text-light rounded-sm px-2 py-1 mr-2 w-full sm:w-64"
+              />
+              {searchTerm && (
+                <button 
+                  onClick={() => setSearchTerm('')} 
+                  className="text-theme-text-dark hover:text-theme-text-light"
+                >
+                  <span className="sr-only">Clear</span>
+                  ×
+                </button>
+              )}
+            </div>
+            
+            {/* Control Buttons */}
+            <div className='flex flex-wrap gap-2'>
+              <button 
+                className='border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm flex items-center'
+                onClick={() => setShowControls(!showControls)}
+              >
+                <AdjustmentsHorizontalIcon className="w-4 h-4 mr-1" />
+                <span>Edit</span>
+              </button>
+              
+              <button 
+                className='border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm flex items-center'
+                onClick={() => saveSettings()}
+              >
+                <BookmarkIcon className="w-4 h-4 mr-1" />
+                <span>Export</span>
+              </button>
+              
+              <div className='relative inline-block'>
+                <span className='flex border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm'>
+                  <span className="flex items-center mr-2">Import</span>
+                  <input className='cursor-pointer w-16' type="file" onChange={loadSettings} />
+                </span>
+              </div>
+              
+              <button 
+                className='border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm flex items-center text-theme-red'
+                onClick={resetLayout}
+              >
+                <ArrowPathIcon className="w-4 h-4 mr-1" />
+                <span>Reset</span>
+              </button>
+            </div>
+          </div>
+          
+          {/* Saved Layouts */}
+          {savedLayouts.length > 0 && (
+            <div className="mb-6 border-b border-theme-border-lighter pb-4">
+              <h3 className="text-md mb-3 font-medium">Saved Layouts</h3>
+              <div className="flex flex-wrap gap-2">
+                {savedLayouts.map((layout, index) => (
+                  <div key={index} className="border border-theme-border-lighter rounded-sm px-3 py-1 flex items-center bg-theme-layer-darker">
+                    <button 
+                      onClick={() => loadLayout(layout.data)} 
+                      className="text-sm hover:text-theme-text-light mr-2"
+                    >
+                      {layout.name}
+                    </button>
+                    <button 
+                      onClick={() => deleteLayout(index)} 
+                      className="text-xs text-theme-text-dark hover:text-theme-red"
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
-          ))}
-        </div> : <></>}
-      </div>
-      <ToolControls
-        newTool={newTool}
-        handleNewToolChange={handleNewToolChange}
-        addNewTool={addNewTool}
-        newCategory={newCategory}
-        setNewCategory={setNewCategory}
-        addNewCategory={addNewCategory}
-        resetLayout={resetLayout}
-        allCategoriesForDropdown={allCategoriesForDropdown}
-      />
+          )}
+          
+          {/* Category Tabs */}
+          {filteredCategories.length > 0 && (
+            <div className="mb-6 border-b border-theme-border-lighter">
+              <div className="flex overflow-x-auto pb-2 scrollbar-hide">
+                <button 
+                  className={`mr-3 px-3 py-1 text-sm whitespace-nowrap ${activeCategory === null ? 'text-theme-text-light border-b-2 border-theme-text-light' : 'text-theme-text-dark hover:text-theme-text-base'}`}
+                  onClick={() => setActiveCategory(null)}
+                >
+                  All Categories
+                </button>
+                {filteredCategories.map(category => (
+                  <button 
+                    key={category} 
+                    className={`mr-3 px-3 py-1 text-sm whitespace-nowrap ${activeCategory === category ? 'text-theme-text-light border-b-2 border-theme-text-light' : 'text-theme-text-dark hover:text-theme-text-base'}`}
+                    onClick={() => setActiveCategory(activeCategory === category ? null : category)}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Main Grid */}
+          <div className="text-theme-text-base gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            {filteredCategories.map((category, index) => (
+              <div key={category} className={`mb-6 border-l border-theme-border-lighter pl-4 fade-in-delay-${index % 3 + 1}`}>
+                <h2 className="text-md mb-4 lowercase">{category}</h2>
+                <div className="space-y-2">
+                  {(filteredTools[category] || []).filter(x => !visibility[x.id]).map((tool, _) => (
+                    <ToolItem
+                      key={tool.id}
+                      tool={tool}
+                      toggleVisibility={toggleVisibility}
+                      isVisible={!visibility[tool.id]}
+                      handleToolClick={handleToolClick}
+                      handleFavorite={handleFavorite}
+                      isFavorited={favorites[tool.id]}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Hidden Apps Section */}
+          <div>
+            <p className='text-md flex leading-tight font-wigrum pt-6 pb-2 border-t border-theme-border-lighter'>
+              hidden apps
+              {hiddens ? 
+                <ArrowUpCircleIcon
+                  onClick={() => setHiddens(!hiddens)}
+                  className={classNames('group ml-2 translate-y-1 flex w-4 h-4 border-0 hover:text-theme-layer-lighter hover:cursor-pointer items-center justify-center text-theme-white')}
+                /> : 
+                <ArrowDownCircleIcon
+                  onClick={() => setHiddens(!hiddens)}
+                  className={classNames('group ml-2 translate-y-1 flex w-4 h-4 border-0 hover:text-theme-layer-lighter hover:cursor-pointer items-center justify-center text-theme-white')}
+                />
+              }
+            </p>
+            
+            {hiddens && (
+              <div className="text-theme-text-base pt-4 gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                {filteredCategories.map(category => (
+                  <div key={category} className="mb-4 border-l border-theme-border-lighter pl-4">
+                    <h2 className="text-md mb-4 lowercase">{category}</h2>
+                    <div className="space-y-2">
+                      {(filteredTools[category] || []).filter(x => visibility[x.id]).map(tool => (
+                        <ToolItem
+                          key={tool.id}
+                          tool={tool}
+                          toggleVisibility={toggleVisibility}
+                          isVisible={!visibility[tool.id]}
+                          handleToolClick={handleToolClick}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Controls Section */}
+          {showControls && (
+            <ToolControls
+              newTool={newTool}
+              handleNewToolChange={handleNewToolChange}
+              addNewTool={addNewTool}
+              newCategory={newCategory}
+              setNewCategory={setNewCategory}
+              addNewCategory={addNewCategory}
+              resetLayout={resetLayout}
+              allCategoriesForDropdown={allCategoriesForDropdown}
+              saveLayout={(name: string) => saveSettings(name)}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 };

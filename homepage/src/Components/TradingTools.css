@@ -1,0 +1,26 @@
+/* Add a subtle pulsing animation to some elements for visual interest */
+@keyframes pulse {
+  0% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.9;
+  }
+}
+
+.pulse-effect {
+  animation: pulse 4s infinite ease-in-out;
+}
+
+/* Gradients for cards */
+.card-gradient {
+  background-image: linear-gradient(to right, var(--theme-layer-lighter), var(--theme-layer-lightest));
+  transition: all 0.2s ease-in-out;
+}
+
+.card-gradient:hover {
+  background-image: linear-gradient(to right, var(--theme-layer-light), var(--theme-layer-lighter));
+}
