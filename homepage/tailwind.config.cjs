@@ -2,6 +2,7 @@ const defaultTheme = require("tailwindcss/defaultTheme");
 
 module.exports = {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
@@ -10,6 +11,7 @@ module.exports = {
         sans: ["Inter", ...defaultTheme.fontFamily.sans],
       },
       colors: {
+        // Dark theme colors
         "theme-layer-darkest": "#0b0b13",
         "theme-layer-darker": "#12121a",
         "theme-layer-dark": "#171722",
@@ -37,6 +39,21 @@ module.exports = {
         "theme-pan-navy": " #27272A",
         "theme-pan-sky": " #0072B5",
         "theme-pan-champagne": " #F4EEE8",
+        
+        // Light theme colors
+        "light-layer-lightest": "#ffffff",
+        "light-layer-lighter": "#f8f9fa",
+        "light-layer-light": "#f1f3f5",
+        "light-layer-base": "#e9ecef",
+        "light-layer-dark": "#dee2e6",
+        "light-layer-darker": "#ced4da",
+        "light-layer-darkest": "#adb5bd",
+        "light-loading-bar-shine": "#868e96",
+        "light-border-light": "#e9ecef",
+        "light-border-dark": "#ced4da",
+        "light-text-dark": "#212529",
+        "light-text-base": "#495057",
+        "light-text-light": "#868e96",
       },
     },
   },

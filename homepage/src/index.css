@@ -4,10 +4,14 @@
 
 @layer base {
   :root {
-    color-scheme: dark;
     scroll-behavior: smooth;
+  }
+  
+  /* Dark theme (default) */
+  :root, .dark {
+    color-scheme: dark;
     
-    /* Custom theme variables for easier access */
+    /* Dark theme variables */
     --theme-layer-darkest: #0b0b13;
     --theme-layer-darker: #12121a;
     --theme-layer-dark: #171722;
@@ -17,6 +21,35 @@
     --theme-layer-lightest: #454258;
   }
   
+  /* Light theme */
+  .light {
+    color-scheme: light;
+    
+    /* Light theme variables */
+    --theme-layer-darkest: #ffffff;
+    --theme-layer-darker: #f8f9fa;
+    --theme-layer-dark: #f1f3f5;
+    --theme-layer-base: #e9ecef;
+    --theme-layer-light: #dee2e6;
+    --theme-layer-lighter: #ced4da;
+    --theme-layer-lightest: #adb5bd;
+  }
+  
+  /* Dark theme styles */
+  .dark body {
+    @apply bg-theme-layer-base text-theme-text-base;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Light theme styles */
+  .light body {
+    @apply bg-light-layer-base text-light-text-base;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Apply default dark theme */
   body {
     @apply bg-theme-layer-base text-theme-text-base;
     -webkit-font-smoothing: antialiased;

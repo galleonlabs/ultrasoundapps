@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { collection, getDocs, doc, updateDoc, increment } from 'firebase/firestore';
-import { db, analytics } from '../main.tsx';
+import { db, analytics } from '../firebase.config';
 import './ToolsList.css'
 import { logEvent } from "firebase/analytics";
 import { classNames } from '../utils/index.tsx';
 import { ArrowDownCircleIcon, ArrowUpCircleIcon, AdjustmentsHorizontalIcon, BookmarkIcon, ArrowPathIcon } from '@heroicons/react/20/solid';
 import ToolItem from './ToolItem';
 import ToolControls from './ToolControls';
+import { useTheme } from '../context/ThemeContext';
 
 // Define proper types
 interface Tool {
@@ -25,6 +26,8 @@ interface SavedLayout {
 }
 
 const ToolsList: React.FC = () => {
+  const { theme } = useTheme();
+  
   // state declarations with proper types
   const [tools, setTools] = useState<Tool[]>([]);
   const initialVisibility = useMemo(() => JSON.parse(localStorage.getItem('visibility') || '{}'), []);
@@ -75,32 +78,67 @@ const ToolsList: React.FC = () => {
     }, []);
   
   useEffect(() => {
-    logEvent(analytics, 'page_view', { page_path: '/' });
+    // Track page view
+    if (analytics) {
+      logEvent(analytics, 'page_view', { page_path: '/' });
+    }
 
     const fetchData = async () => {
       setIsLoading(true);
+      
+      // Placeholder data removed for production
+      
+      // Get custom tools from localStorage
+      const customTools = JSON.parse(localStorage.getItem('customTools') || '[]');
+      
       try {
+        // Check if Firestore is properly initialized
+        if (!db) {
+          console.error('Firestore is not initialized');
+          throw new Error('Firestore is not initialized');
+        }
+        
+        // Attempt to fetch from Firestore
+        console.log('Fetching data from Firestore collection "tools"');
         const querySnapshot = await getDocs(collection(db, 'tools'));
-        const toolsArray = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const customTools = JSON.parse(localStorage.getItem('customTools') || '[]');
+        console.log('Firestore query successful, documents count:', querySnapshot.docs.length);
+        
+        const toolsArray = querySnapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data() 
+        }));
+        
+        // Combine fetched tools with custom tools
         const combinedTools = [...toolsArray, ...customTools];
         processTools(combinedTools);
         
-        const savedVisibility = localStorage.getItem('visibility');
-        if (savedVisibility) {
-          setVisibility(JSON.parse(savedVisibility));
-        }
-
-        const savedCustomCategories = JSON.parse(localStorage.getItem('customCategories') || '[]');
-        setCustomCategories(savedCustomCategories);
       } catch (error) {
-        console.error("Error fetching data:", error);
-        // Fallback to local data only if Firestore fails
-        const customTools = JSON.parse(localStorage.getItem('customTools') || '[]');
+        console.error("Error fetching data from Firestore:", error);
+        
+        // Use custom tools if available
         if (customTools.length > 0) {
+          // Use custom tools only
+          console.log('Using custom tools from localStorage');
           processTools(customTools);
+        } else {
+          // Show empty state
+          console.log('No data available - showing empty state');
+          processTools([]);
         }
       } finally {
+        // Load saved settings from localStorage
+        try {
+          const savedVisibility = localStorage.getItem('visibility');
+          if (savedVisibility) {
+            setVisibility(JSON.parse(savedVisibility));
+          }
+          
+          const savedCustomCategories = JSON.parse(localStorage.getItem('customCategories') || '[]');
+          setCustomCategories(savedCustomCategories);
+        } catch (e) {
+          console.error('Error loading saved settings:', e);
+        }
+        
         setIsLoading(false);
       }
     };
@@ -110,14 +148,14 @@ const ToolsList: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const grouped: Record<string, any[]> = {};
-      tools.forEach((tool: any) => {
+      const grouped: Record<string, Tool[]> = {};
+      tools.forEach((tool: Tool) => {
         const { category = 'Uncategorized' } = tool;
         if (!grouped[category]) {
           grouped[category] = [];
         }
         grouped[category].push(tool);
-        grouped[category].sort((a, b) => b.upvotes - a.upvotes);
+        grouped[category].sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
       });
       setGroupedTools(grouped);
     };
@@ -130,7 +168,9 @@ const ToolsList: React.FC = () => {
   }, [visibility]);
 
   const handleToolClick = (toolName: string) => {
-    logEvent(analytics, 'select_tool', { name: toolName });
+    if (analytics) {
+      logEvent(analytics, 'select_tool', { name: toolName });
+    }
   };
   
   useEffect(() => {
@@ -145,40 +185,46 @@ const ToolsList: React.FC = () => {
       const newFavorites = { ...favorites, [toolId]: !isFavorited };
       setFavorites(newFavorites);
       
-      // Only update Firestore for non-custom tools
-      if (!toolId.startsWith('custom-')) {
-        // Get the current tool
-        const toolRef = doc(db, 'tools', toolId);
-        
-        // Increment or decrement upvotes in Firestore
-        await updateDoc(toolRef, {
-          upvotes: increment(isFavorited ? -1 : 1)
-        });
-        
-        // Update local state
-        setTools(prevTools => 
-          prevTools.map(tool => 
-            tool.id === toolId 
-              ? { ...tool, upvotes: (tool.upvotes || 0) + (isFavorited ? -1 : 1) } 
-              : tool
-          )
-        );
-      } else {
-        // For custom tools, just update local state
-        setTools(prevTools => 
-          prevTools.map(tool => 
-            tool.id === toolId 
-              ? { ...tool, upvotes: (tool.upvotes || 0) + (isFavorited ? -1 : 1) } 
-              : tool
-          )
-        );
+      // Update local state first
+      setTools(prevTools => 
+        prevTools.map(tool => 
+          tool.id === toolId 
+            ? { ...tool, upvotes: (tool.upvotes || 0) + (isFavorited ? -1 : 1) } 
+            : tool
+        )
+      );
+      
+      // Log the favorite action if analytics is available
+      if (analytics) {
+        logEvent(analytics, isFavorited ? 'unfavorite_tool' : 'favorite_tool', { tool_id: toolId });
       }
       
-      // Log the favorite action
-      logEvent(analytics, isFavorited ? 'unfavorite_tool' : 'favorite_tool', { tool_id: toolId });
+      // Skip Firestore updates for custom tools
+      if (toolId.startsWith('custom-')) {
+        return; // Exit early for custom tools
+      }
+      
+      // Only attempt Firestore update if db is available
+      if (db) {
+        try {
+          console.log(`Updating Firestore for tool ${toolId}`);
+          const toolRef = doc(db, 'tools', toolId);
+          
+          // Increment or decrement upvotes in Firestore
+          await updateDoc(toolRef, {
+            upvotes: increment(isFavorited ? -1 : 1)
+          });
+          console.log(`Firestore update successful for tool ${toolId}`);
+        } catch (firestoreError) {
+          console.error('Firestore update error:', firestoreError);
+          // We don't revert the local state here because we want the app to work offline
+        }
+      } else {
+        console.log('Skipping Firestore update - Firestore not available');
+      }
     } catch (error) {
-      console.error('Error updating favorites:', error);
-      // Revert the change in favorites if there's an error
+      console.error('Error in handleFavorite:', error);
+      // Revert the change in favorites if there's an error in the main function
       setFavorites(prev => ({ ...prev, [toolId]: prev[toolId] }));
     }
   };
@@ -251,13 +297,13 @@ const ToolsList: React.FC = () => {
     }
   };
 
-  const loadSettings = (event: any) => {
-    const file = event.target.files[0];
+  const loadSettings = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e: any) => {
+      reader.onload = (e: ProgressEvent<FileReader>) => {
         try {
-          const layoutData = e.target.result;
+          const layoutData = e.target?.result as string;
           loadLayout(layoutData);
         } catch (error) {
           console.error("Error reading file:", error);
@@ -274,7 +320,7 @@ const ToolsList: React.FC = () => {
     localStorage.setItem('savedLayouts', JSON.stringify(updatedLayouts));
   };
 
-  const handleNewToolChange = (e: any) => {
+  const handleNewToolChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setNewTool(prev => ({ ...prev, [name]: value }));
   };
@@ -340,17 +386,27 @@ const ToolsList: React.FC = () => {
       {isLoading ? (
         <div className="flex items-center justify-center min-h-[200px]">
           <div className="animate-pulse flex space-x-4">
-            <div className="h-12 w-12 bg-theme-layer-lighter rounded-full"></div>
+            <div className={`h-12 w-12 rounded-full ${
+              theme === 'dark' ? 'bg-theme-layer-lighter' : 'bg-light-layer-darker'
+            }`}></div>
             <div className="space-y-4 flex-1">
-              <div className="h-4 bg-theme-layer-lighter rounded w-3/4"></div>
-              <div className="h-4 bg-theme-layer-lighter rounded w-1/2"></div>
+              <div className={`h-4 rounded w-3/4 ${
+                theme === 'dark' ? 'bg-theme-layer-lighter' : 'bg-light-layer-darker'
+              }`}></div>
+              <div className={`h-4 rounded w-1/2 ${
+                theme === 'dark' ? 'bg-theme-layer-lighter' : 'bg-light-layer-darker'
+              }`}></div>
             </div>
           </div>
         </div>
       ) : (
         <>
           {/* Control Bar */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-theme-layer-darker bg-opacity-30 p-4 rounded-sm border border-theme-border-lighter">
+          <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-opacity-30 p-4 rounded-sm border ${
+            theme === 'dark' 
+              ? 'bg-theme-layer-darker border-theme-border-lighter' 
+              : 'bg-light-layer-light border-light-border-dark'
+          }`}>
             {/* Search Bar */}
             <div className="flex items-center mb-4 sm:mb-0 w-full sm:w-auto">
               <input
@@ -358,10 +414,18 @@ const ToolsList: React.FC = () => {
                 placeholder="Search tools..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="border text-sm border-theme-layer-lightest bg-theme-layer-lighter bg-opacity-50 text-theme-text-light rounded-sm px-2 py-1 mr-2 w-full sm:w-64"
+                className={`border text-sm bg-opacity-50 rounded-sm px-2 py-1 mr-2 w-full sm:w-64 ${
+                  theme === 'dark' 
+                    ? 'border-theme-layer-lightest bg-theme-layer-lighter text-theme-text-light' 
+                    : 'border-light-border-dark bg-light-layer-base text-light-text-dark'
+                }`}
               />
               {searchTerm && (
-                <button onClick={() => setSearchTerm("")} className="text-theme-text-dark hover:text-theme-text-light">
+                <button onClick={() => setSearchTerm("")} className={
+                  theme === 'dark' 
+                    ? 'text-theme-text-dark hover:text-theme-text-light' 
+                    : 'text-light-text-light hover:text-light-text-dark'
+                }>
                   <span className="sr-only">Clear</span>×
                 </button>
               )}
@@ -370,7 +434,11 @@ const ToolsList: React.FC = () => {
             {/* Control Buttons */}
             <div className="flex flex-wrap gap-2">
               <button
-                className="border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm flex items-center"
+                className={`border rounded-sm px-2 py-1 text-sm flex items-center ${
+                  theme === 'dark' 
+                    ? 'hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest' 
+                    : 'hover:shadow-[1px_1px_0px_#868e96] border-light-border-dark'
+                }`}
                 onClick={() => setShowControls(!showControls)}
               >
                 <AdjustmentsHorizontalIcon className="w-4 h-4 mr-1" />
@@ -378,7 +446,11 @@ const ToolsList: React.FC = () => {
               </button>
 
               <button
-                className="border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm flex items-center"
+                className={`border rounded-sm px-2 py-1 text-sm flex items-center ${
+                  theme === 'dark' 
+                    ? 'hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest' 
+                    : 'hover:shadow-[1px_1px_0px_#868e96] border-light-border-dark'
+                }`}
                 onClick={() => saveSettings()}
               >
                 <BookmarkIcon className="w-4 h-4 mr-1" />
@@ -386,7 +458,11 @@ const ToolsList: React.FC = () => {
               </button>
 
               <div className="relative inline-block">
-                <span className="flex border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm">
+                <span className={`flex border rounded-sm px-2 py-1 text-sm ${
+                  theme === 'dark' 
+                    ? 'hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest' 
+                    : 'hover:shadow-[1px_1px_0px_#868e96] border-light-border-dark'
+                }`}>
                   <span className="flex items-center mr-2">Import</span>
                   <input className="cursor-pointer w-24" type="file" onChange={loadSettings} />
                 </span>
@@ -437,8 +513,12 @@ const ToolsList: React.FC = () => {
                 <button
                   className={`mr-3 px-3 py-2 text-sm whitespace-nowrap rounded-t-sm ${
                     activeCategory === null
-                      ? "text-theme-text-light border-b-2 border-theme-text-light font-medium"
-                      : "text-theme-text-dark hover:text-theme-text-base"
+                      ? theme === 'dark'
+                          ? "text-theme-text-light border-b-2 border-theme-text-light font-medium"
+                          : "text-light-text-dark border-b-2 border-light-text-dark font-medium"
+                      : theme === 'dark'
+                          ? "text-theme-text-dark hover:text-theme-text-base"
+                          : "text-light-text-light hover:text-light-text-base"
                   }`}
                   onClick={() => setActiveCategory(null)}
                   aria-pressed={activeCategory === null}
@@ -450,8 +530,12 @@ const ToolsList: React.FC = () => {
                     key={category}
                     className={`mr-3 px-3 py-2 text-sm whitespace-nowrap rounded-t-sm ${
                       activeCategory === category
-                        ? "text-theme-text-light border-b-2 border-theme-text-light font-medium"
-                        : "text-theme-text-dark hover:text-theme-text-base"
+                        ? theme === 'dark'
+                            ? "text-theme-text-light border-b-2 border-theme-text-light font-medium"
+                            : "text-light-text-dark border-b-2 border-light-text-dark font-medium"
+                        : theme === 'dark'
+                            ? "text-theme-text-dark hover:text-theme-text-base"
+                            : "text-light-text-light hover:text-light-text-base"
                     }`}
                     onClick={() => setActiveCategory(activeCategory === category ? null : category)}
                     aria-pressed={activeCategory === category}
@@ -467,7 +551,9 @@ const ToolsList: React.FC = () => {
           <div className="text-theme-text-base gap-3 sm:gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
             {filteredCategories.map((category) => (
               <div key={category} className="mb-6 border-l border-theme-border-lighter pl-3 sm:pl-4">
-                <h2 className="text-md mb-3 sm:mb-4 lowercase font-medium">{category}</h2>
+                <h2 className={`text-md mb-3 sm:mb-4 lowercase font-medium ${
+                theme === 'dark' ? 'text-theme-text-light' : 'text-light-text-dark'
+              }`}>{category}</h2>
                 <div className="space-y-2">
                   {(filteredTools[category] || [])
                     .filter((x) => !visibility[x.id])
@@ -495,14 +581,16 @@ const ToolsList: React.FC = () => {
                 <ArrowUpCircleIcon
                   onClick={() => setHiddens(!hiddens)}
                   className={classNames(
-                    "group ml-2 translate-y-1 flex w-4 h-4 border-0 hover:text-gray-400 hover:cursor-pointer items-center justify-center text-theme-white"
+                    "group ml-2 translate-y-1 flex w-4 h-4 border-0 hover:text-gray-400 hover:cursor-pointer items-center justify-center",
+                    theme === 'dark' ? "text-theme-white" : "text-light-text-dark"
                   )}
                 />
               ) : (
                 <ArrowDownCircleIcon
                   onClick={() => setHiddens(!hiddens)}
                   className={classNames(
-                    "group ml-2 translate-y-1 flex w-4 h-4 border-0 hover:text-gray-400 hover:cursor-pointer items-center justify-center text-theme-white"
+                    "group ml-2 translate-y-1 flex w-4 h-4 border-0 hover:text-gray-400 hover:cursor-pointer items-center justify-center",
+                    theme === 'dark' ? "text-theme-white" : "text-light-text-dark"
                   )}
                 />
               )}
@@ -512,7 +600,9 @@ const ToolsList: React.FC = () => {
               <div className="text-theme-text-base pt-4 gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
                 {filteredCategories.map((category) => (
                   <div key={category} className="mb-4 border-l border-theme-border-lighter pl-4">
-                    <h2 className="text-md mb-4 lowercase">{category}</h2>
+                    <h2 className={`text-md mb-4 lowercase ${
+                      theme === 'dark' ? 'text-theme-text-light' : 'text-light-text-dark'
+                    }`}>{category}</h2>
                     <div className="space-y-2">
                       {(filteredTools[category] || [])
                         .filter((x) => visibility[x.id])

@@ -8,43 +8,42 @@ import {
   RouterProvider,
 } from "react-router-dom";
 
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getFirestore } from "firebase/firestore";
 import Layout from './layout/Layout.tsx';
 import Error from './layout/Error.tsx';
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_API_KEY,
-  authDomain: import.meta.env.VITE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_APP_ID,
-  measurementId: import.meta.env.MEASUREMENT_ID
-};
-
-const app = initializeApp(firebaseConfig);
+import { ThemeProvider } from './context/ThemeContext.tsx';
+import AdminPage from './pages/AdminPage.tsx';
+import AnalyticsPage from './pages/AnalyticsPage.tsx';
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Layout></Layout>,
+    element: <Layout />,
     errorElement: <Error />,
     children: [
       {
         path: "",
         element: <TradingTools />,
-      }, 
+      },
+      {
+        path: "admin",
+        element: <AdminPage />,
+      },
+      {
+        path: "analytics",
+        element: <AnalyticsPage />,
+      },
     ],
   },
 ]);
 
+import { AuthProvider } from './contexts/AuthContext';
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <ThemeProvider>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </ThemeProvider>
   </React.StrictMode>,
 )
-
-export const db = getFirestore(app);
-export const analytics = getAnalytics(app);
