@@ -76,7 +76,7 @@ export default function Layout() {
             <div className={`mx-auto px-4 sm:px-6 lg:px-8 leading-tight tracking-normal font-wigrum py-3 ${
               theme === 'dark' 
                 ? 'bg-theme-layer-base bg-opacity-50' 
-                : 'bg-light-layer-base bg-opacity-50'
+                : 'bg-light-layer-base'
             }`}>
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-4">
