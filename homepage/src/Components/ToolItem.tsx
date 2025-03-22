@@ -43,11 +43,11 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
   
   return (
     <div
-      className={`relative flex items-center space-x-3 rounded-sm px-2 py-2 group border sm:transition-all sm:duration-200 sm:hover:scale-[1.01] ${
+      className={`relative flex items-center space-x-3 rounded-sm px-2 py-2 group ${
         theme === "dark"
-          ? "bg-gradient-to-r from-theme-layer-lighter to-theme-layer-lightest border-theme-layer-lightest hover:shadow-[1px_1px_0px_#ffffff]"
-          : "bg-gradient-to-r from-light-layer-light to-light-layer-lighter border-light-border-dark hover:shadow-[1px_1px_0px_#868e96]"
-      }`}
+          ? "bg-theme-layer-lighter border-theme-layer-lightest hover:bg-theme-layer-lightest"
+          : "bg-light-layer-light border-light-border-dark hover:bg-light-layer-lighter"
+      } border transition-all duration-150`}
       tabIndex={0}
       role="button"
       aria-label={`Open ${name} website`}
@@ -55,20 +55,18 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
       <div className="flex-shrink-0">
         {logo ? (
           <img
-            className={`h-9 w-9 overflow-hidden rounded-sm sm:grayscale-[20%] sm:group-hover:grayscale-0 sm:transition-all border ${
-              theme === "dark" ? "border-theme-layer-lightest" : "border-light-border-dark"
-            }`}
+            className="h-8 w-8 overflow-hidden rounded-sm transition-all"
             src={logo}
             alt={`${name} logo`}
-            width={36}
-            height={36}
+            width={32}
+            height={32}
             loading="lazy"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.onerror = null;
               // Create colored placeholder based on tool name (consistent color for same name)
               const placeholderEl = document.createElement("div");
-              placeholderEl.className = "h-9 w-9 flex items-center justify-center text-white font-bold rounded-sm";
+              placeholderEl.className = "h-8 w-8 flex items-center justify-center text-white font-bold rounded-sm";
               placeholderEl.style.backgroundColor = avatarColor;
               placeholderEl.textContent = name.charAt(0).toUpperCase();
               placeholderEl.setAttribute("role", "img");
@@ -78,9 +76,7 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
           />
         ) : (
           <div
-            className={`h-9 w-9 flex items-center justify-center text-white font-bold rounded-sm border ${
-              theme === "dark" ? "border-theme-layer-lightest" : "border-light-border-dark"
-            }`}
+            className="h-8 w-8 flex items-center justify-center text-white font-bold rounded-sm"
             style={{ backgroundColor: avatarColor }}
             role="img"
             aria-label={`${name} (no logo available)`}
@@ -94,25 +90,25 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
           href={affiliateLink || website}
           target="_blank"
           rel="noopener noreferrer"
-          className="focus:outline-none focus:ring-2 focus:ring-theme-text-light rounded-sm block"
+          className="focus:outline-none focus:ring-1 focus:ring-theme-text-light rounded-sm block"
           onClick={handleClick}
         >
           <p
             className={`text-sm font-medium truncate ${
               theme === "dark"
-                ? "text-theme-text-base group-hover:text-white"
-                : "text-light-text-dark group-hover:text-light-text-dark"
+                ? "text-theme-text-base"
+                : "text-light-text-dark"
             }`}
           >
             {name}
           </p>
         </a>
       </div>
-      <div className="flex items-center">
+      <div className="flex items-center space-x-2">
         <button
-          className={`mr-2 flex items-center text-xs cursor-pointer focus:outline-none focus:ring-1 focus:ring-theme-text-light p-1 rounded-sm ${
+          className={`flex items-center text-xs cursor-pointer focus:outline-none rounded-sm ${
             isFavorited
-              ? "text-theme-yellow hover:text-theme-yellow"
+              ? "text-theme-yellow"
               : theme === "dark"
               ? "text-theme-text-dark hover:text-theme-yellow"
               : "text-light-text-light hover:text-theme-yellow"
@@ -123,24 +119,24 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
           aria-pressed={isFavorited}
         >
           <StarIcon
-            className={`w-4 h-4 mr-0.5 ${
+            className={`w-4 h-4 ${
               isFavorited ? "text-theme-yellow" : theme === "dark" ? "text-theme-text-dark" : "text-light-text-light"
             }`}
           />
-          <span>{upvotes || 0}</span>
+          <span className="ml-1">{upvotes || 0}</span>
         </button>
         <button
           onClick={handleVisibilityToggle}
           className={classNames(
-            `group flex w-5 h-5 border-0 hover:cursor-pointer items-center justify-center rounded-sm focus:outline-none focus:ring-1 focus:ring-theme-text-light ${
+            `flex w-5 h-5 hover:cursor-pointer items-center justify-center rounded-sm focus:outline-none ${
               theme === "dark"
-                ? "text-theme-layer-base bg-theme-layer-lightest hover:text-gray-300"
+                ? "text-theme-layer-base hover:text-gray-300"
                 : "text-gray-600 hover:text-gray-800"
             }`
           )}
           aria-label={isVisible ? `Hide ${name}` : `Show ${name}`}
         >
-          {isVisible ? <XCircleIcon className="w-5 h-5" /> : <CheckCircleIcon className="w-5 h-5" />}
+          {isVisible ? <XCircleIcon className="w-4 h-4" /> : <CheckCircleIcon className="w-4 h-4" />}
         </button>
       </div>
     </div>

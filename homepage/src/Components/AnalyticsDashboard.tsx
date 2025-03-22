@@ -38,38 +38,29 @@ const AnalyticsDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  // Helper function for conditional classNames
-  const classNames = (...classes: string[]) => {
-    return classes.filter(Boolean).join(' ');
-  };
-
   return (
-    <div className={classNames(
-      'rounded-lg shadow p-6 w-full mx-auto',
+    <div className={`rounded-sm p-4 w-full mx-auto ${
       theme === 'dark' 
-        ? 'bg-theme-layer-base text-theme-text-base' 
-        : 'bg-light-layer-base text-light-text-base'
-    )}>
-      <h2 className={classNames(
-        'text-2xl font-semibold mb-6',
+        ? 'bg-theme-layer-base' 
+        : 'bg-light-layer-base'
+    }`}>
+      <h2 className={`text-xl font-medium mb-4 ${
         theme === 'dark' ? 'text-theme-text-light' : 'text-light-text-dark'
-      )}>Top Tools Dashboard</h2>
+      }`}>Top Tools</h2>
 
       {/* Loading and Error States */}
       {isLoading && (
-        <div className="flex justify-center items-center h-64">
-          <div className={classNames(
-            'animate-spin rounded-full h-12 w-12 border-t-2 border-b-2',
+        <div className="flex justify-center items-center h-40">
+          <div className={`animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 ${
             theme === 'dark' ? 'border-theme-purple' : 'border-theme-purple'
-          )}></div>
+          }`}></div>
         </div>
       )}
 
       {error && (
-        <div className={classNames(
-          'p-4 rounded-sm mb-4',
+        <div className={`p-3 rounded-sm mb-3 text-sm ${
           theme === 'dark' ? 'bg-theme-red bg-opacity-20 text-theme-red' : 'bg-theme-red bg-opacity-10 text-theme-red'
-        )}>
+        }`}>
           {error}
         </div>
       )}
@@ -78,28 +69,31 @@ const AnalyticsDashboard: React.FC = () => {
       {!isLoading && !error && (
         <div className="overflow-x-auto">
           {/* Top Tools Section */}
-          <table className={classNames(
-            'min-w-full divide-y',
-            theme === 'dark' ? 'divide-theme-border-grey' : 'divide-light-border-dark'
-          )}>
-            <thead className={theme === 'dark' ? 'text-theme-text-light' : 'text-light-text-dark'}>
+          <table className={`min-w-full ${
+            theme === 'dark' ? 'text-theme-text-base' : 'text-light-text-base'
+          }`}>
+            <thead className={`text-xs uppercase ${
+              theme === 'dark' ? 'text-theme-text-light opacity-70' : 'text-light-text-dark opacity-70'
+            }`}>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Tool</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Usage</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Last Used</th>
+                <th className="px-3 py-2 text-left">Tool</th>
+                <th className="px-3 py-2 text-left">Usage</th>
+                <th className="px-3 py-2 text-left">Last Used</th>
               </tr>
             </thead>
-            <tbody className={theme === 'dark' ? 'divide-y divide-theme-border-grey' : 'divide-y divide-light-border-dark'}>
+            <tbody className={`divide-y ${
+              theme === 'dark' ? 'divide-theme-layer-lighter' : 'divide-light-border-dark divide-opacity-30'
+            }`}>
               {topTools.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-6 py-4 text-center">No tool usage data available</td>
+                  <td colSpan={3} className="px-3 py-4 text-center text-sm opacity-70">No tool usage data available</td>
                 </tr>
               ) : (
                 topTools.map((tool) => (
-                  <tr key={tool.toolId}>
-                    <td className="px-6 py-4 whitespace-nowrap">{tool.toolName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{tool.clicks}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr key={tool.toolId} className="text-sm">
+                    <td className="px-3 py-2.5">{tool.toolName}</td>
+                    <td className="px-3 py-2.5">{tool.clicks}</td>
+                    <td className="px-3 py-2.5">
                       {new Date(tool.lastUsed).toLocaleDateString()}
                     </td>
                   </tr>

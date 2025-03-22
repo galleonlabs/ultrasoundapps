@@ -3,7 +3,6 @@ import { collection, getDocs, doc, updateDoc, increment } from 'firebase/firesto
 import { db, analytics } from '../firebase.config';
 import './ToolsList.css'
 import { logEvent } from "firebase/analytics";
-import { classNames } from '../utils/index.tsx';
 import { ArrowDownCircleIcon, ArrowUpCircleIcon, AdjustmentsHorizontalIcon, BookmarkIcon, ArrowPathIcon } from '@heroicons/react/20/solid';
 import ToolItem from './ToolItem';
 import ToolControls from './ToolControls';
@@ -402,30 +401,30 @@ const ToolsList: React.FC = () => {
       ) : (
         <>
           {/* Control Bar */}
-          <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-opacity-30 p-4 rounded-sm border ${
+          <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 p-3 rounded-sm ${
             theme === 'dark' 
-              ? 'bg-theme-layer-darker border-theme-border-lighter' 
-              : 'bg-light-layer-light border-light-border-dark'
+              ? 'bg-theme-layer-darker' 
+              : 'bg-light-layer-light'
           }`}>
             {/* Search Bar */}
-            <div className="flex items-center mb-4 sm:mb-0 w-full sm:w-auto">
+            <div className="flex items-center mb-3 sm:mb-0 w-full sm:w-auto">
               <input
                 type="text"
                 placeholder="Search tools..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`border text-sm bg-opacity-50 rounded-sm px-2 py-1 mr-2 w-full sm:w-64 ${
+                className={`text-sm rounded-sm px-2 py-1.5 w-full sm:w-60 ${
                   theme === 'dark' 
                     ? 'border-theme-layer-lightest bg-theme-layer-lighter text-theme-text-light' 
-                    : 'border-light-border-dark bg-light-layer-base text-light-text-dark'
+                    : 'border-light-border-dark bg-white text-light-text-dark'
                 }`}
               />
               {searchTerm && (
-                <button onClick={() => setSearchTerm("")} className={
+                <button onClick={() => setSearchTerm("")} className={`ml-2 ${
                   theme === 'dark' 
                     ? 'text-theme-text-dark hover:text-theme-text-light' 
                     : 'text-light-text-light hover:text-light-text-dark'
-                }>
+                }`}>
                   <span className="sr-only">Clear</span>×
                 </button>
               )}
@@ -434,10 +433,10 @@ const ToolsList: React.FC = () => {
             {/* Control Buttons */}
             <div className="flex flex-wrap gap-2">
               <button
-                className={`border rounded-sm px-2 py-1 text-sm flex items-center ${
+                className={`rounded-sm px-2 py-1.5 text-sm flex items-center ${
                   theme === 'dark' 
-                    ? 'hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest' 
-                    : 'hover:shadow-[1px_1px_0px_#868e96] border-light-border-dark'
+                    ? 'bg-theme-layer-lighter hover:bg-theme-layer-lightest' 
+                    : 'bg-light-layer-lighter hover:bg-light-layer-dark hover:text-white'
                 }`}
                 onClick={() => setShowControls(!showControls)}
               >
@@ -446,10 +445,10 @@ const ToolsList: React.FC = () => {
               </button>
 
               <button
-                className={`border rounded-sm px-2 py-1 text-sm flex items-center ${
+                className={`rounded-sm px-2 py-1.5 text-sm flex items-center ${
                   theme === 'dark' 
-                    ? 'hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest' 
-                    : 'hover:shadow-[1px_1px_0px_#868e96] border-light-border-dark'
+                    ? 'bg-theme-layer-lighter hover:bg-theme-layer-lightest' 
+                    : 'bg-light-layer-lighter hover:bg-light-layer-dark hover:text-white'
                 }`}
                 onClick={() => saveSettings()}
               >
@@ -458,18 +457,22 @@ const ToolsList: React.FC = () => {
               </button>
 
               <div className="relative inline-block">
-                <span className={`flex border rounded-sm px-2 py-1 text-sm ${
+                <span className={`flex rounded-sm px-2 py-1.5 text-sm ${
                   theme === 'dark' 
-                    ? 'hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest' 
-                    : 'hover:shadow-[1px_1px_0px_#868e96] border-light-border-dark'
+                    ? 'bg-theme-layer-lighter hover:bg-theme-layer-lightest' 
+                    : 'bg-light-layer-lighter hover:bg-light-layer-dark hover:text-white'
                 }`}>
                   <span className="flex items-center mr-2">Import</span>
-                  <input className="cursor-pointer w-24" type="file" onChange={loadSettings} />
+                  <input className="cursor-pointer w-20" type="file" onChange={loadSettings} />
                 </span>
               </div>
 
               <button
-                className="border hover:shadow-[1px_1px_0px_#ffffff] border-theme-layer-lightest rounded-sm px-2 py-1 text-sm flex items-center text-theme-red"
+                className={`rounded-sm px-2 py-1.5 text-sm flex items-center ${
+                  theme === 'dark' 
+                    ? 'bg-theme-layer-lighter hover:bg-theme-layer-lightest text-theme-red' 
+                    : 'bg-light-layer-lighter hover:bg-light-layer-dark text-theme-red hover:text-white'
+                }`}
                 onClick={resetLayout}
               >
                 <ArrowPathIcon className="w-4 h-4 mr-1" />
@@ -480,23 +483,27 @@ const ToolsList: React.FC = () => {
 
           {/* Saved Layouts */}
           {savedLayouts.length > 0 && (
-            <div className="mb-6 border-b border-theme-border-lighter pb-4">
-              <h3 className="text-md mb-3 font-medium">Saved Layouts</h3>
+            <div className="mb-4">
+              <h3 className="text-sm mb-2 opacity-80">Saved Layouts</h3>
               <div className="flex flex-wrap gap-2">
                 {savedLayouts.map((layout, index) => (
                   <div
                     key={index}
-                    className="border border-theme-border-lighter rounded-sm px-3 py-1 flex items-center bg-theme-layer-darker"
+                    className={`rounded-sm px-2 py-1 flex items-center ${
+                      theme === 'dark'
+                        ? 'bg-theme-layer-darker'
+                        : 'bg-light-layer-light'
+                    }`}
                   >
                     <button
                       onClick={() => loadLayout(layout.data)}
-                      className="text-sm hover:text-theme-text-light mr-2"
+                      className="text-sm hover:opacity-80 mr-2"
                     >
                       {layout.name}
                     </button>
                     <button
                       onClick={() => deleteLayout(index)}
-                      className="text-xs text-theme-text-dark hover:text-theme-red"
+                      className="text-xs opacity-60 hover:text-theme-red"
                     >
                       ×
                     </button>
@@ -508,17 +515,17 @@ const ToolsList: React.FC = () => {
 
           {/* Category Tabs - Optimized for touch and better scrolling */}
           {filteredCategories.length > 0 && (
-            <div className="mb-4 sm:mb-6 border-b border-theme-border-lighter">
-              <div className="flex overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+            <div className="mb-4">
+              <div className="flex overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2 md:mx-0 md:px-0">
                 <button
-                  className={`mr-3 px-3 py-2 text-sm whitespace-nowrap rounded-t-sm ${
+                  className={`mr-2 px-3 py-1.5 text-sm whitespace-nowrap rounded-sm ${
                     activeCategory === null
                       ? theme === 'dark'
-                          ? "text-theme-text-light border-b-2 border-theme-text-light font-medium"
-                          : "text-light-text-dark border-b-2 border-light-text-dark font-medium"
+                          ? "bg-theme-layer-lighter text-theme-text-light"
+                          : "bg-light-layer-lighter text-light-text-dark"
                       : theme === 'dark'
-                          ? "text-theme-text-dark hover:text-theme-text-base"
-                          : "text-light-text-light hover:text-light-text-base"
+                          ? "text-theme-text-dark hover:text-theme-text-base hover:bg-theme-layer-darker"
+                          : "text-light-text-light hover:text-light-text-base hover:bg-light-layer-light"
                   }`}
                   onClick={() => setActiveCategory(null)}
                   aria-pressed={activeCategory === null}
@@ -528,14 +535,14 @@ const ToolsList: React.FC = () => {
                 {filteredCategories.map((category) => (
                   <button
                     key={category}
-                    className={`mr-3 px-3 py-2 text-sm whitespace-nowrap rounded-t-sm ${
+                    className={`mr-2 px-3 py-1.5 text-sm whitespace-nowrap rounded-sm ${
                       activeCategory === category
                         ? theme === 'dark'
-                            ? "text-theme-text-light border-b-2 border-theme-text-light font-medium"
-                            : "text-light-text-dark border-b-2 border-light-text-dark font-medium"
+                            ? "bg-theme-layer-lighter text-theme-text-light"
+                            : "bg-light-layer-lighter text-light-text-dark"
                         : theme === 'dark'
-                            ? "text-theme-text-dark hover:text-theme-text-base"
-                            : "text-light-text-light hover:text-light-text-base"
+                            ? "text-theme-text-dark hover:text-theme-text-base hover:bg-theme-layer-darker"
+                            : "text-light-text-light hover:text-light-text-base hover:bg-light-layer-light"
                     }`}
                     onClick={() => setActiveCategory(activeCategory === category ? null : category)}
                     aria-pressed={activeCategory === category}
@@ -548,11 +555,11 @@ const ToolsList: React.FC = () => {
           )}
 
           {/* Main Grid - optimized for all screen sizes */}
-          <div className="text-theme-text-base gap-3 sm:gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+          <div className="text-theme-text-base gap-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
             {filteredCategories.map((category) => (
-              <div key={category} className="mb-6 border-l border-theme-border-lighter pl-3 sm:pl-4">
-                <h2 className={`text-md mb-3 sm:mb-4 lowercase font-medium ${
-                theme === 'dark' ? 'text-theme-text-light' : 'text-light-text-dark'
+              <div key={category} className="mb-5">
+                <h2 className={`text-sm mb-2 font-medium ${
+                theme === 'dark' ? 'text-theme-text-light opacity-80' : 'text-light-text-dark opacity-80'
               }`}>{category}</h2>
                 <div className="space-y-2">
                   {(filteredTools[category] || [])
@@ -575,33 +582,29 @@ const ToolsList: React.FC = () => {
 
           {/* Hidden Apps Section */}
           <div>
-            <p className="text-md flex leading-tight font-wigrum pt-6 pb-2 border-t border-theme-border-lighter">
-              hidden apps
-              {hiddens ? (
-                <ArrowUpCircleIcon
-                  onClick={() => setHiddens(!hiddens)}
-                  className={classNames(
-                    "group ml-2 translate-y-1 flex w-4 h-4 border-0 hover:text-gray-400 hover:cursor-pointer items-center justify-center",
-                    theme === 'dark' ? "text-theme-white" : "text-light-text-dark"
-                  )}
-                />
-              ) : (
-                <ArrowDownCircleIcon
-                  onClick={() => setHiddens(!hiddens)}
-                  className={classNames(
-                    "group ml-2 translate-y-1 flex w-4 h-4 border-0 hover:text-gray-400 hover:cursor-pointer items-center justify-center",
-                    theme === 'dark' ? "text-theme-white" : "text-light-text-dark"
-                  )}
-                />
-              )}
+            <p className={`text-sm flex items-center pt-4 pb-2 ${
+              theme === 'dark' ? 'text-theme-text-light opacity-70' : 'text-light-text-dark opacity-70'
+            }`}>
+              Hidden apps
+              <button 
+                onClick={() => setHiddens(!hiddens)}
+                className="ml-2 focus:outline-none"
+                aria-label={hiddens ? "Hide hidden apps" : "Show hidden apps"}
+              >
+                {hiddens ? (
+                  <ArrowUpCircleIcon className="w-4 h-4" />
+                ) : (
+                  <ArrowDownCircleIcon className="w-4 h-4" />
+                )}
+              </button>
             </p>
 
             {hiddens && (
-              <div className="text-theme-text-base pt-4 gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+              <div className="text-theme-text-base pt-3 gap-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {filteredCategories.map((category) => (
                   <div key={category} className="mb-4 border-l border-theme-border-lighter pl-4">
-                    <h2 className={`text-md mb-4 lowercase ${
-                      theme === 'dark' ? 'text-theme-text-light' : 'text-light-text-dark'
+                    <h2 className={`text-sm mb-4 lowercase ${
+                      theme === 'dark' ? 'text-theme-text-light opacity-80' : 'text-light-text-dark opacity-80'
                     }`}>{category}</h2>
                     <div className="space-y-2">
                       {(filteredTools[category] || [])
