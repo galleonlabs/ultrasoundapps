@@ -403,8 +403,8 @@ const ToolsList: React.FC = () => {
           {/* Control Bar */}
           <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 p-3 rounded-sm ${
             theme === 'dark' 
-              ? 'bg-theme-layer-darker' 
-              : 'bg-light-layer-light'
+              ? 'border border-theme-text-dark/30' 
+              : 'border border-light-text-dark/30'
           }`}>
             {/* Search Bar */}
             <div className="flex items-center mb-3 sm:mb-0 w-full sm:w-auto">
@@ -555,9 +555,35 @@ const ToolsList: React.FC = () => {
           )}
 
           {/* Main Grid - optimized for all screen sizes */}
-          <div className="text-theme-text-base gap-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+          <div className="text-theme-text-base gap-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:hidden">
             {filteredCategories.map((category) => (
               <div key={category} className="mb-5">
+                <h2 className={`text-sm mb-2 font-medium ${
+                theme === 'dark' ? 'text-theme-text-light opacity-80' : 'text-light-text-dark opacity-80'
+              }`}>{category}</h2>
+                <div className="space-y-2">
+                  {(filteredTools[category] || [])
+                    .filter((x) => !visibility[x.id])
+                    .map((tool) => (
+                      <ToolItem
+                        key={tool.id}
+                        tool={tool}
+                        toggleVisibility={toggleVisibility}
+                        isVisible={!visibility[tool.id]}
+                        handleToolClick={handleToolClick}
+                        handleFavorite={handleFavorite}
+                        isFavorited={favorites[tool.id]}
+                      />
+                    ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Fixed width layout for large screens */}
+          <div className="hidden lg:flex lg:flex-wrap gap-3">
+            {filteredCategories.map((category) => (
+              <div key={category} className="mb-5 w-64">
                 <h2 className={`text-sm mb-2 font-medium ${
                 theme === 'dark' ? 'text-theme-text-light opacity-80' : 'text-light-text-dark opacity-80'
               }`}>{category}</h2>
@@ -600,28 +626,59 @@ const ToolsList: React.FC = () => {
             </p>
 
             {hiddens && (
-              <div className="text-theme-text-base pt-3 gap-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {filteredCategories.map((category) => (
-                  <div key={category} className="mb-4 border-l border-theme-border-lighter pl-4">
-                    <h2 className={`text-sm mb-4 lowercase ${
-                      theme === 'dark' ? 'text-theme-text-light opacity-80' : 'text-light-text-dark opacity-80'
-                    }`}>{category}</h2>
-                    <div className="space-y-2">
-                      {(filteredTools[category] || [])
-                        .filter((x) => visibility[x.id])
-                        .map((tool) => (
-                          <ToolItem
-                            key={tool.id}
-                            tool={tool}
-                            toggleVisibility={toggleVisibility}
-                            isVisible={!visibility[tool.id]}
-                            handleToolClick={handleToolClick}
-                          />
-                        ))}
+              <>
+                {/* Responsive grid for smaller screens */}
+                <div className="text-theme-text-base pt-3 gap-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:hidden">
+                  {filteredCategories.map((category) => (
+                    <div key={category} className="mb-4">
+                      <h2 className={`text-sm mb-4 lowercase ${
+                        theme === 'dark' ? 'text-theme-text-light opacity-80' : 'text-light-text-dark opacity-80'
+                      }`}>{category}</h2>
+                      <div className="space-y-2">
+                        {(filteredTools[category] || [])
+                          .filter((x) => visibility[x.id])
+                          .map((tool) => (
+                            <ToolItem
+                              key={tool.id}
+                              tool={tool}
+                              toggleVisibility={toggleVisibility}
+                              isVisible={!visibility[tool.id]}
+                              handleToolClick={handleToolClick}
+                              handleFavorite={handleFavorite}
+                              isFavorited={favorites[tool.id]}
+                            />
+                          ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+
+                {/* Fixed width layout for large screens */}
+                <div className="hidden lg:flex lg:flex-wrap gap-3 pt-3">
+                  {filteredCategories.map((category) => (
+                    <div key={category} className="mb-4 w-64">
+                      <h2 className={`text-sm mb-4 lowercase ${
+                        theme === 'dark' ? 'text-theme-text-light opacity-80' : 'text-light-text-dark opacity-80'
+                      }`}>{category}</h2>
+                      <div className="space-y-2">
+                        {(filteredTools[category] || [])
+                          .filter((x) => visibility[x.id])
+                          .map((tool) => (
+                            <ToolItem
+                              key={tool.id}
+                              tool={tool}
+                              toggleVisibility={toggleVisibility}
+                              isVisible={!visibility[tool.id]}
+                              handleToolClick={handleToolClick}
+                              handleFavorite={handleFavorite}
+                              isFavorited={favorites[tool.id]}
+                            />
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
