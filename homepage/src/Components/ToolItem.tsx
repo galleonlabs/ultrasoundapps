@@ -136,10 +136,10 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
         </a>
       </div>
       
-      {/* Action buttons */}
+      {/* Action buttons - different for desktop/mobile */}
       <div className="flex items-center">
-        {/* Action buttons that appear on hover */}
-        <div className={`flex items-center space-x-2 transition-opacity duration-150 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
+        {/* Desktop buttons that appear on hover - hidden on mobile */}
+        <div className={`hidden sm:flex items-center space-x-2 transition-opacity duration-150 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
           {/* Star/Favorite button with count */}
           <button
             className={`p-1 rounded-full flex items-center ${
@@ -191,38 +191,38 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
             {isVisible ? <XCircleIcon className="w-4 h-4" /> : <CheckCircleIcon className="w-4 h-4" />}
           </button>
         </div>
-      </div>
-      
-      {/* Mobile-friendly view where buttons are always visible */}
-      <div className={`sm:hidden flex items-center space-x-2 absolute right-2 top-2`}>
-        {/* Favorite button for mobile */}
-        <button
-          onClick={handleFavoriteToggle}
-          className={`p-1 rounded-full flex items-center ${
-            isFavorited
-              ? "bg-theme-yellow bg-opacity-20 text-theme-yellow"
-              : theme === "dark"
-                ? "bg-theme-layer-dark text-theme-text-dark"
-                : "bg-light-layer-light text-light-text-light"
-          }`}
-          aria-label={isFavorited ? `Remove ${name} from favorites` : `Add ${name} to favorites`}
-        >
-          <StarIcon className="w-3.5 h-3.5" />
-          <span className="text-xs font-medium ml-1">{upvotes || 0}</span>
-        </button>
         
-        {/* Visibility toggle button for mobile */}
-        <button
-          onClick={handleVisibilityToggle}
-          className={`p-1 rounded-full ${
-            theme === "dark"
-              ? "bg-theme-layer-dark text-theme-text-dark hover:text-theme-text-light"
-              : "bg-light-layer-light text-light-text-light hover:text-light-text-dark"
-          }`}
-          aria-label={isVisible ? `Hide ${name}` : `Show ${name}`}
-        >
-          {isVisible ? <XCircleIcon className="w-3.5 h-3.5" /> : <CheckCircleIcon className="w-3.5 h-3.5" />}
-        </button>
+        {/* Mobile-friendly buttons - always visible but only on mobile */}
+        <div className={`sm:hidden flex items-center space-x-2`}>
+          {/* Favorite button for mobile */}
+          <button
+            onClick={handleFavoriteToggle}
+            className={`p-1 rounded-full flex items-center ${
+              isFavorited
+                ? "bg-theme-yellow bg-opacity-20 text-theme-yellow"
+                : theme === "dark"
+                  ? "bg-theme-layer-dark text-theme-text-dark"
+                  : "bg-light-layer-light text-light-text-light"
+            }`}
+            aria-label={isFavorited ? `Remove ${name} from favorites` : `Add ${name} to favorites`}
+          >
+            <StarIcon className="w-3.5 h-3.5" />
+            <span className="text-xs font-medium ml-1">{upvotes || 0}</span>
+          </button>
+          
+          {/* Visibility toggle button for mobile */}
+          <button
+            onClick={handleVisibilityToggle}
+            className={`p-1 rounded-full ${
+              theme === "dark"
+                ? "bg-theme-layer-dark text-theme-text-dark hover:text-theme-text-light"
+                : "bg-light-layer-light text-light-text-light hover:text-light-text-dark"
+            }`}
+            aria-label={isVisible ? `Hide ${name}` : `Show ${name}`}
+          >
+            {isVisible ? <XCircleIcon className="w-3.5 h-3.5" /> : <CheckCircleIcon className="w-3.5 h-3.5" />}
+          </button>
+        </div>
       </div>
     </div>
   );
