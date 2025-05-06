@@ -127,3 +127,5 @@ dist
 .pnp.*
 hedgedhedgie/.firebase/*
 cms/scripts/key.json
+
+**/.claude/settings.local.json
