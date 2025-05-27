@@ -217,12 +217,28 @@ const ToolsList: React.FC = () => {
     // Skip processing if tools is empty
     if (tools.length === 0) return;
     
+    // Filter out unwanted tools
+    const toolsToRemove = [
+      'CoinTracker', 'Coinstats', 'Delta', 'Zapper', 'Koinly', 'Zerion', 
+      'Marinade Finance', 'Figment', 'Staked', 'Ankr', 'Stakewise', 
+      'Portal Bridge', 'Ankr Staking', 'Frax Ether'
+    ];
+    
+    const filteredTools = tools.filter(tool => 
+      !toolsToRemove.includes(tool.name)
+    );
+    
     // Use a more efficient approach with a single iteration
     const grouped: Record<string, Tool[]> = {};
     
-    // Group tools by category
-    tools.forEach((tool: Tool) => {
-      const category = tool.category || 'Uncategorized';
+    // Group tools by category with category merging
+    filteredTools.forEach((tool: Tool) => {
+      let category = tool.category || 'Uncategorized';
+      
+      // Merge Staking and Liquid Staking
+      if (category === 'Liquid Staking' || category === 'Staking') {
+        category = 'Staking';
+      }
       
       // Initialize category array if needed
       if (!grouped[category]) {
@@ -690,32 +706,34 @@ const ToolsList: React.FC = () => {
       ) : (
         <>
           {/* Responsive Control Bar */}
-          <div className={`mb-4 rounded-md border ${
+          <div className={`mb-6 rounded-lg shadow-lg ${
             theme === 'dark' 
-              ? 'border-theme-text-dark/30 bg-theme-layer-dark/50' 
-              : 'border-light-text-dark/30 bg-light-layer-lighter/50'
+              ? 'bg-gradient-to-r from-theme-layer-dark to-theme-layer-darker border border-theme-layer-lighter/20' 
+              : 'bg-white shadow-md border border-light-border-dark/20'
           }`}>
             {/* Enhanced Search Bar - Full Width on Mobile */}
-            <div className="p-3 border-b border-opacity-20 border-gray-500">
+            <div className={`p-4 border-b ${
+              theme === 'dark' ? 'border-theme-layer-lighter/20' : 'border-light-border-dark/20'
+            }`}>
               <div className="flex items-center relative">
-                <div className={`absolute left-3 text-sm ${
+                <div className={`absolute left-4 text-sm ${
                   theme === 'dark' 
                     ? 'text-theme-text-dark' 
                     : 'text-light-text-light'
                 }`}>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                   </svg>
                 </div>
                 <input
                   type="text"
-                  placeholder="Search by name, category or website..."
+                  placeholder="Search apps by name, category or website..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`text-sm rounded-md pl-9 pr-3 py-2.5 w-full ${
+                  className={`text-base rounded-lg pl-12 pr-12 py-3 w-full transition-all focus:outline-none focus:ring-2 ${
                     theme === 'dark' 
-                      ? 'border-theme-layer-lightest bg-theme-layer-lighter text-theme-text-light' 
-                      : 'border-light-border-dark bg-white text-light-text-dark'
+                      ? 'bg-theme-layer-base border border-theme-layer-lighter text-theme-text-light placeholder-theme-text-dark focus:ring-theme-purple/50 focus:border-theme-purple' 
+                      : 'bg-light-layer-lighter border border-light-border-dark text-light-text-dark placeholder-light-text-light focus:ring-theme-pan-sky/50 focus:border-theme-pan-sky'
                   }`}
                 />
                 {searchTerm && (
@@ -795,40 +813,40 @@ const ToolsList: React.FC = () => {
             </div>
 
             {/* Control Buttons - Responsive Grid Layout */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-4">
               <button
-                className={`rounded-md px-2 py-2 text-sm flex items-center justify-center ${
+                className={`rounded-lg px-3 py-2.5 text-sm font-medium flex items-center justify-center transition-all ${
                   theme === 'dark' 
-                    ? 'bg-theme-layer-lighter hover:bg-theme-layer-lightest' 
-                    : 'bg-white hover:bg-light-layer-dark hover:text-white'
+                    ? 'bg-theme-layer-base hover:bg-theme-layer-lighter text-theme-text-light border border-theme-layer-lighter' 
+                    : 'bg-light-layer-lighter hover:bg-light-layer-light text-light-text-dark border border-light-border-dark'
                 }`}
                 onClick={() => setShowControls(!showControls)}
               >
-                <AdjustmentsHorizontalIcon className="w-4 h-4 mr-1" />
-                <span>Edit</span>
+                <AdjustmentsHorizontalIcon className="w-4 h-4 mr-1.5" />
+                <span>Edit Layout</span>
               </button>
 
               <button
-                className={`rounded-md px-2 py-2 text-sm flex items-center justify-center ${
+                className={`rounded-lg px-3 py-2.5 text-sm font-medium flex items-center justify-center transition-all ${
                   theme === 'dark' 
-                    ? 'bg-theme-layer-lighter hover:bg-theme-layer-lightest' 
-                    : 'bg-white hover:bg-light-layer-dark hover:text-white'
+                    ? 'bg-theme-layer-base hover:bg-theme-layer-lighter text-theme-text-light border border-theme-layer-lighter' 
+                    : 'bg-light-layer-lighter hover:bg-light-layer-light text-light-text-dark border border-light-border-dark'
                 }`}
                 onClick={() => saveSettings()}
               >
-                <BookmarkIcon className="w-4 h-4 mr-1" />
+                <BookmarkIcon className="w-4 h-4 mr-1.5" />
                 <span>Export</span>
               </button>
 
               <div className="relative">
                 <label 
-                  className={`flex rounded-md px-2 py-2 text-sm items-center justify-center cursor-pointer ${
+                  className={`flex rounded-lg px-3 py-2.5 text-sm font-medium items-center justify-center cursor-pointer transition-all ${
                     theme === 'dark' 
-                      ? 'bg-theme-layer-lighter hover:bg-theme-layer-lightest' 
-                      : 'bg-white hover:bg-light-layer-dark hover:text-white'
+                      ? 'bg-theme-layer-base hover:bg-theme-layer-lighter text-theme-text-light border border-theme-layer-lighter' 
+                      : 'bg-light-layer-lighter hover:bg-light-layer-light text-light-text-dark border border-light-border-dark'
                   }`}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-1.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                   </svg>
                   <span>Import</span>
@@ -842,14 +860,14 @@ const ToolsList: React.FC = () => {
               </div>
 
               <button
-                className={`rounded-md px-2 py-2 text-sm flex items-center justify-center ${
+                className={`rounded-lg px-3 py-2.5 text-sm font-medium flex items-center justify-center transition-all ${
                   theme === 'dark' 
-                    ? 'bg-theme-layer-lighter hover:bg-theme-layer-lightest text-theme-red' 
-                    : 'bg-white hover:bg-light-layer-dark text-theme-red hover:text-white'
+                    ? 'bg-theme-layer-base hover:bg-theme-red/20 text-theme-red border border-theme-red/30 hover:border-theme-red' 
+                    : 'bg-light-layer-lighter hover:bg-theme-red/10 text-theme-red border border-theme-red/30 hover:border-theme-red'
                 }`}
                 onClick={resetLayout}
               >
-                <ArrowPathIcon className="w-4 h-4 mr-1" />
+                <ArrowPathIcon className="w-4 h-4 mr-1.5" />
                 <span>Reset</span>
               </button>
             </div>
@@ -919,59 +937,86 @@ const ToolsList: React.FC = () => {
 
           {/* Enhanced Category Navigation - More visually appealing and usable */}
           {Object.keys(groupedTools).length > 0 && (
-            <div className="mb-6">
-              <h3 className={`text-sm mb-3 ${
-                theme === 'dark' ? 'text-theme-text-dark' : 'text-light-text-light'
-              }`}>Categories</h3>
+            <div className="mb-8">
+              <h3 className={`text-lg font-semibold mb-4 ${
+                theme === 'dark' ? 'text-theme-text-light' : 'text-light-text-dark'
+              }`}>Browse by Category</h3>
               
               {/* Desktop Category Grid */}
-              <div className="hidden md:grid category-grid gap-2 mb-2">
+              <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-2">
                 <button
-                  className={`px-3 py-2 text-sm whitespace-nowrap rounded-md transition-all flex items-center justify-between ${
+                  className={`px-4 py-3 text-sm font-medium whitespace-nowrap rounded-lg transition-all flex items-center justify-between shadow-sm hover:shadow-md ${
                     activeCategory === null
                       ? theme === 'dark'
-                          ? "bg-theme-purple bg-opacity-20 border border-theme-purple border-opacity-30 text-theme-text-light"
-                          : "bg-theme-pan-sky bg-opacity-20 border border-theme-pan-sky border-opacity-30 text-light-text-dark"
+                          ? "bg-gradient-to-r from-theme-purple/30 to-theme-purple/20 border border-theme-purple/50 text-theme-text-light"
+                          : "bg-gradient-to-r from-theme-pan-sky/30 to-theme-pan-sky/20 border border-theme-pan-sky/50 text-light-text-dark"
                       : theme === 'dark'
-                          ? "border border-theme-layer-lightest text-theme-text-dark hover:text-theme-text-base hover:border-theme-purple"
-                          : "border border-light-border-dark text-light-text-light hover:text-light-text-dark hover:border-theme-pan-sky"
+                          ? "bg-theme-layer-lighter border border-theme-layer-lightest text-theme-text-base hover:bg-theme-layer-lightest hover:text-theme-text-light hover:border-theme-purple/50"
+                          : "bg-white border border-light-border-dark text-light-text-base hover:bg-light-layer-lighter hover:text-light-text-dark hover:border-theme-pan-sky/50"
                   }`}
                   onClick={() => setActiveCategory(null)}
                   aria-pressed={activeCategory === null}
                 >
-                  <span>All Categories</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ml-2 ${
+                  <span className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+                    </svg>
+                    All Categories
+                  </span>
+                  <span className={`text-xs px-2 py-1 rounded-full ml-2 font-semibold ${
                     theme === 'dark' 
-                      ? 'bg-theme-layer-lighter text-theme-text-dark' 
-                      : 'bg-light-layer-light text-light-text-light'
+                      ? 'bg-theme-layer-dark text-theme-text-light' 
+                      : 'bg-light-layer-light text-light-text-dark'
                   }`}>
                     {Object.values(groupedTools).reduce((sum, tools) => sum + tools.filter(t => !visibility[t.id]).length, 0)}
                   </span>
                 </button>
                 
-                {Object.keys(groupedTools).map((category) => {
+                {Object.keys(groupedTools).sort((a, b) => {
+                  // Sort by visible count, then alphabetically
+                  const countA = (groupedTools[a] || []).filter(t => !visibility[t.id]).length;
+                  const countB = (groupedTools[b] || []).filter(t => !visibility[t.id]).length;
+                  if (countB !== countA) return countB - countA;
+                  return a.localeCompare(b);
+                }).map((category) => {
                   const visibleCount = (groupedTools[category] || []).filter(t => !visibility[t.id]).length;
+                  const categoryIcons: Record<string, string> = {
+                    'DEXs': 'M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z',
+                    'Analytics': 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z',
+                    'Portfolio': 'M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z',
+                    'Exchanges': 'M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+                    'Staking': 'M9.348 14.652a3.75 3.75 0 0 1 0-5.304m5.304 0a3.75 3.75 0 0 1 0 5.304m-7.425 2.121a6.75 6.75 0 0 1 0-9.546m9.546 0a6.75 6.75 0 0 1 0 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12Z',
+                    'Bridges': 'M7.5 3.75H6A2.25 2.25 0 0 0 3.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5m0 9V18A2.25 2.25 0 0 1 18 20.25h-1.5m-9 0H6A2.25 2.25 0 0 1 3.75 18v-1.5M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
+                    'NFTs': 'M2.25 15.75 5.159 5.159a2.25 2.25 0 0 1 3.182-1.341l8.684 8.684a2.25 2.25 0 0 1-1.341 3.182L5.25 18.75A2.25 2.25 0 0 1 2.25 15.75ZM16.5 6a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z'
+                  };
+                  const defaultIcon = 'M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6Z';
+                  
                   return (
                     <button
                       key={category}
-                      className={`px-3 py-2 text-sm whitespace-nowrap rounded-md transition-all flex items-center justify-between ${
+                      className={`px-4 py-3 text-sm font-medium whitespace-nowrap rounded-lg transition-all flex items-center justify-between shadow-sm hover:shadow-md ${
                         activeCategory === category
                           ? theme === 'dark'
-                              ? "bg-theme-purple bg-opacity-20 border border-theme-purple border-opacity-30 text-theme-text-light"
-                              : "bg-theme-pan-sky bg-opacity-20 border border-theme-pan-sky border-opacity-30 text-light-text-dark"
+                              ? "bg-gradient-to-r from-theme-purple/30 to-theme-purple/20 border border-theme-purple/50 text-theme-text-light"
+                              : "bg-gradient-to-r from-theme-pan-sky/30 to-theme-pan-sky/20 border border-theme-pan-sky/50 text-light-text-dark"
                           : theme === 'dark'
-                              ? "border border-theme-layer-lightest text-theme-text-dark hover:text-theme-text-base hover:border-theme-purple"
-                              : "border border-light-border-dark text-light-text-light hover:text-light-text-dark hover:border-theme-pan-sky"
-                      } ${visibleCount === 0 ? 'opacity-50' : ''}`}
-                      onClick={() => setActiveCategory(activeCategory === category ? null : category)}
+                              ? "bg-theme-layer-lighter border border-theme-layer-lightest text-theme-text-base hover:bg-theme-layer-lightest hover:text-theme-text-light hover:border-theme-purple/50"
+                              : "bg-white border border-light-border-dark text-light-text-base hover:bg-light-layer-lighter hover:text-light-text-dark hover:border-theme-pan-sky/50"
+                      } ${visibleCount === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => visibleCount > 0 && setActiveCategory(activeCategory === category ? null : category)}
                       aria-pressed={activeCategory === category}
                       disabled={visibleCount === 0}
                     >
-                      <span>{category}</span>
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full ml-2 ${
+                      <span className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d={categoryIcons[category] || defaultIcon} />
+                        </svg>
+                        {category}
+                      </span>
+                      <span className={`text-xs px-2 py-1 rounded-full ml-2 font-semibold ${
                         theme === 'dark' 
-                          ? 'bg-theme-layer-lighter text-theme-text-dark' 
-                          : 'bg-light-layer-light text-light-text-light'
+                          ? 'bg-theme-layer-dark text-theme-text-light' 
+                          : 'bg-light-layer-light text-light-text-dark'
                       }`}>
                         {visibleCount}
                       </span>
@@ -981,54 +1026,59 @@ const ToolsList: React.FC = () => {
               </div>
               
               {/* Mobile Horizontal Scrolling Tabs */}
-              <div className="md:hidden overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2 flex">
+              <div className="md:hidden overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 flex">
                 <button
-                  className={`mr-2 px-3 py-2 text-sm whitespace-nowrap rounded-md flex items-center ${
+                  className={`mr-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap rounded-lg flex items-center shadow-sm ${
                     activeCategory === null
                       ? theme === 'dark'
-                          ? "bg-theme-purple bg-opacity-20 border border-theme-purple border-opacity-30 text-theme-text-light"
-                          : "bg-theme-pan-sky bg-opacity-20 border border-theme-pan-sky border-opacity-30 text-light-text-dark"
+                          ? "bg-gradient-to-r from-theme-purple/30 to-theme-purple/20 border border-theme-purple/50 text-theme-text-light"
+                          : "bg-gradient-to-r from-theme-pan-sky/30 to-theme-pan-sky/20 border border-theme-pan-sky/50 text-light-text-dark"
                       : theme === 'dark'
-                          ? "border border-theme-layer-lightest text-theme-text-dark"
-                          : "border border-light-border-dark text-light-text-light"
+                          ? "bg-theme-layer-lighter border border-theme-layer-lightest text-theme-text-base"
+                          : "bg-white border border-light-border-dark text-light-text-base"
                   }`}
                   onClick={() => setActiveCategory(null)}
                   aria-pressed={activeCategory === null}
                 >
                   <span>All</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ml-1.5 ${
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ml-2 font-semibold ${
                     theme === 'dark' 
-                      ? 'bg-theme-layer-lighter text-theme-text-dark' 
-                      : 'bg-light-layer-light text-light-text-light'
+                      ? 'bg-theme-layer-dark text-theme-text-light' 
+                      : 'bg-light-layer-light text-light-text-dark'
                   }`}>
                     {Object.values(groupedTools).reduce((sum, tools) => sum + tools.filter(t => !visibility[t.id]).length, 0)}
                   </span>
                 </button>
                 
-                {Object.keys(groupedTools).map((category) => {
+                {Object.keys(groupedTools).sort((a, b) => {
+                  const countA = (groupedTools[a] || []).filter(t => !visibility[t.id]).length;
+                  const countB = (groupedTools[b] || []).filter(t => !visibility[t.id]).length;
+                  if (countB !== countA) return countB - countA;
+                  return a.localeCompare(b);
+                }).map((category) => {
                   const visibleCount = (groupedTools[category] || []).filter(t => !visibility[t.id]).length;
                   if (visibleCount === 0) return null;
                   
                   return (
                     <button
                       key={category}
-                      className={`mr-2 px-3 py-2 text-sm whitespace-nowrap rounded-md flex items-center ${
+                      className={`mr-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap rounded-lg flex items-center shadow-sm ${
                         activeCategory === category
                           ? theme === 'dark'
-                              ? "bg-theme-purple bg-opacity-20 border border-theme-purple border-opacity-30 text-theme-text-light"
-                              : "bg-theme-pan-sky bg-opacity-20 border border-theme-pan-sky border-opacity-30 text-light-text-dark"
+                              ? "bg-gradient-to-r from-theme-purple/30 to-theme-purple/20 border border-theme-purple/50 text-theme-text-light"
+                              : "bg-gradient-to-r from-theme-pan-sky/30 to-theme-pan-sky/20 border border-theme-pan-sky/50 text-light-text-dark"
                           : theme === 'dark'
-                              ? "border border-theme-layer-lightest text-theme-text-dark"
-                              : "border border-light-border-dark text-light-text-light"
+                              ? "bg-theme-layer-lighter border border-theme-layer-lightest text-theme-text-base"
+                              : "bg-white border border-light-border-dark text-light-text-base"
                       }`}
                       onClick={() => setActiveCategory(activeCategory === category ? null : category)}
                       aria-pressed={activeCategory === category}
                     >
                       <span>{category}</span>
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full ml-1.5 ${
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full ml-2 font-semibold ${
                         theme === 'dark' 
-                          ? 'bg-theme-layer-lighter text-theme-text-dark' 
-                          : 'bg-light-layer-light text-light-text-light'
+                          ? 'bg-theme-layer-dark text-theme-text-light' 
+                          : 'bg-light-layer-light text-light-text-dark'
                       }`}>
                         {visibleCount}
                       </span>
@@ -1064,17 +1114,23 @@ const ToolsList: React.FC = () => {
           )}
 
           {/* Responsive Masonry-style Grid - maximizing screen space usage */}
-          <div className="text-theme-text-base">
+          <div className="text-theme-text-base space-y-10">
             {filteredCategories.map((category) => (
-              <div key={category} className="mb-8 category-transition">
-                <h2 className={`text-base md:text-lg mb-3 font-medium ${
-                  theme === 'dark' ? 'text-theme-text-light' : 'text-light-text-dark'
-                }`}>
-                  {category}
-                  <span className="text-xs ml-2 opacity-70">
-                    ({(filteredTools[category] || []).filter(x => !visibility[x.id]).length})
+              <div key={category} className="category-transition">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className={`text-xl md:text-2xl font-bold ${
+                    theme === 'dark' ? 'text-theme-text-light' : 'text-light-text-dark'
+                  }`}>
+                    {category}
+                  </h2>
+                  <span className={`text-sm px-3 py-1 rounded-full font-medium ${
+                    theme === 'dark' 
+                      ? 'bg-theme-layer-lighter text-theme-text-base' 
+                      : 'bg-light-layer-light text-light-text-base'
+                  }`}>
+                    {(filteredTools[category] || []).filter(x => !visibility[x.id]).length} apps
                   </span>
-                </h2>
+                </div>
                 
                 {/* Draggable Grid Layout with drag-and-drop functionality */}
                 <DraggableToolsList 

@@ -61,11 +61,11 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
   
   return (
     <div
-      className={`relative flex items-center space-x-3 rounded-md px-3 py-2.5 group ${
+      className={`relative flex items-center space-x-3 rounded-lg px-4 py-3.5 group transition-all duration-200 ${
         theme === "dark"
-          ? "bg-theme-layer-lighter border-theme-layer-lightest hover:bg-theme-layer-lightest"
-          : "bg-white border-light-border-dark hover:bg-light-layer-lighter"
-      } border shadow-sm hover:shadow-md transition-all duration-150`}
+          ? "bg-gradient-to-r from-theme-layer-lighter to-theme-layer-lighter/90 border-theme-layer-lightest hover:from-theme-layer-lightest hover:to-theme-layer-lightest/90 hover:border-theme-purple/30"
+          : "bg-white border-light-border-dark hover:bg-light-layer-lighter hover:border-theme-pan-sky/30"
+      } border shadow-sm hover:shadow-lg hover:scale-[1.02]`}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       tabIndex={0}
@@ -75,18 +75,18 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
       <div className="flex-shrink-0">
         {logo ? (
           <img
-            className="h-10 w-10 overflow-hidden rounded-md transition-all object-cover"
+            className="h-12 w-12 overflow-hidden rounded-lg transition-all object-cover shadow-md"
             src={logo}
             alt={`${name} logo`}
-            width={40}
-            height={40}
+            width={48}
+            height={48}
             loading="lazy"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.onerror = null;
               // Create colored placeholder based on tool name (consistent color for same name)
               const placeholderEl = document.createElement("div");
-              placeholderEl.className = "h-10 w-10 flex items-center justify-center text-white font-bold rounded-md";
+              placeholderEl.className = "h-12 w-12 flex items-center justify-center text-white font-bold rounded-lg shadow-md";
               placeholderEl.style.backgroundColor = avatarColor;
               placeholderEl.textContent = name.charAt(0).toUpperCase();
               placeholderEl.setAttribute("role", "img");
@@ -96,7 +96,7 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
           />
         ) : (
           <div
-            className="h-10 w-10 flex items-center justify-center text-white font-bold rounded-md"
+            className="h-12 w-12 flex items-center justify-center text-white font-bold rounded-lg shadow-md"
             style={{ backgroundColor: avatarColor }}
             role="img"
             aria-label={`${name} (no logo available)`}
@@ -116,7 +116,7 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
           onClick={handleClick}
         >
           <p
-            className={`text-sm font-medium truncate ${
+            className={`text-base font-semibold truncate ${
               theme === "dark"
                 ? "text-theme-text-light"
                 : "text-light-text-dark"
@@ -125,12 +125,15 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
             {name}
           </p>
           <p
-            className={`text-xs truncate mt-0.5 ${
+            className={`text-sm truncate mt-0.5 flex items-center ${
               theme === "dark"
                 ? "text-theme-text-dark"
                 : "text-light-text-light"
             }`}
           >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 mr-1">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+            </svg>
             {websiteDomain}
           </p>
         </a>
@@ -142,22 +145,22 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
         <div className={`hidden sm:flex items-center space-x-2 transition-opacity duration-150 ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
           {/* Star/Favorite button with count */}
           <button
-            className={`p-1 rounded-full flex items-center ${
+            className={`px-2 py-1 rounded-lg flex items-center transition-all ${
               isFavorited
                 ? theme === "dark" 
-                  ? "bg-theme-yellow bg-opacity-20 text-theme-yellow" 
-                  : "bg-theme-yellow bg-opacity-10 text-theme-yellow"
+                  ? "bg-theme-yellow/20 text-theme-yellow border border-theme-yellow/30" 
+                  : "bg-theme-yellow/10 text-theme-yellow border border-theme-yellow/30"
                 : theme === "dark"
-                  ? "bg-theme-layer-dark hover:bg-theme-layer-base text-theme-text-dark hover:text-theme-yellow"
-                  : "bg-light-layer-light hover:bg-light-layer-dark text-light-text-light hover:text-theme-yellow"
-            } transition-colors`}
+                  ? "bg-theme-layer-dark hover:bg-theme-layer-base text-theme-text-dark hover:text-theme-yellow border border-theme-layer-lightest"
+                  : "bg-light-layer-light hover:bg-light-layer-dark text-light-text-light hover:text-theme-yellow border border-light-border-dark"
+            }`}
             onClick={handleFavoriteToggle}
             title={isFavorited ? "Remove favorite" : "Favorite this tool"}
             aria-label={isFavorited ? `Remove ${name} from favorites` : `Add ${name} to favorites`}
             aria-pressed={isFavorited}
           >
-            <StarIcon className="w-4 h-4 hover:scale-110 transition-transform" />
-            <span className="text-xs font-medium ml-1">{upvotes || 0}</span>
+            <StarIcon className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''} transition-transform hover:scale-110`} />
+            <span className="text-xs font-semibold ml-1">{upvotes || 0}</span>
           </button>
           
           {/* Visit website button */}
@@ -166,11 +169,11 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleClick}
-            className={`p-1 rounded-full ${
+            className={`p-1.5 rounded-lg transition-all ${
               theme === "dark"
-                ? "bg-theme-layer-dark hover:bg-theme-layer-base text-theme-text-light"
-                : "bg-light-layer-light hover:bg-light-layer-dark text-light-text-dark hover:text-white"
-            } transition-colors`}
+                ? "bg-theme-layer-dark hover:bg-theme-purple/20 text-theme-text-light hover:text-theme-purple border border-theme-layer-lightest hover:border-theme-purple/30"
+                : "bg-light-layer-light hover:bg-theme-pan-sky/10 text-light-text-dark hover:text-theme-pan-sky border border-light-border-dark hover:border-theme-pan-sky/30"
+            }`}
             title={`Open ${name} website`}
             aria-label={`Open ${name} website`}
           >
@@ -180,11 +183,11 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
           {/* Visibility toggle button */}
           <button
             onClick={handleVisibilityToggle}
-            className={`p-1 rounded-full ${
+            className={`p-1.5 rounded-lg transition-all ${
               theme === "dark"
-                ? "bg-theme-layer-dark hover:bg-theme-layer-base text-theme-text-dark hover:text-theme-text-light"
-                : "bg-light-layer-light hover:bg-light-layer-dark text-light-text-light hover:text-white"
-            } transition-colors`}
+                ? "bg-theme-layer-dark hover:bg-theme-red/20 text-theme-text-dark hover:text-theme-red border border-theme-layer-lightest hover:border-theme-red/30"
+                : "bg-light-layer-light hover:bg-theme-red/10 text-light-text-light hover:text-theme-red border border-light-border-dark hover:border-theme-red/30"
+            }`}
             title={isVisible ? `Hide ${name}` : `Show ${name}`}
             aria-label={isVisible ? `Hide ${name}` : `Show ${name}`}
           >
@@ -197,26 +200,26 @@ const ToolItem: React.FC<ToolItemProps> = memo(function ToolItem({ tool, toggleV
           {/* Favorite button for mobile */}
           <button
             onClick={handleFavoriteToggle}
-            className={`p-1 rounded-full flex items-center ${
+            className={`px-2 py-1 rounded-lg flex items-center transition-all ${
               isFavorited
-                ? "bg-theme-yellow bg-opacity-20 text-theme-yellow"
+                ? "bg-theme-yellow/20 text-theme-yellow border border-theme-yellow/30"
                 : theme === "dark"
-                  ? "bg-theme-layer-dark text-theme-text-dark"
-                  : "bg-light-layer-light text-light-text-light"
+                  ? "bg-theme-layer-dark text-theme-text-dark border border-theme-layer-lightest"
+                  : "bg-light-layer-light text-light-text-light border border-light-border-dark"
             }`}
             aria-label={isFavorited ? `Remove ${name} from favorites` : `Add ${name} to favorites`}
           >
-            <StarIcon className="w-3.5 h-3.5" />
-            <span className="text-xs font-medium ml-1">{upvotes || 0}</span>
+            <StarIcon className={`w-3.5 h-3.5 ${isFavorited ? 'fill-current' : ''}`} />
+            <span className="text-xs font-semibold ml-1">{upvotes || 0}</span>
           </button>
           
           {/* Visibility toggle button for mobile */}
           <button
             onClick={handleVisibilityToggle}
-            className={`p-1 rounded-full ${
+            className={`p-1.5 rounded-lg transition-all ${
               theme === "dark"
-                ? "bg-theme-layer-dark text-theme-text-dark hover:text-theme-text-light"
-                : "bg-light-layer-light text-light-text-light hover:text-light-text-dark"
+                ? "bg-theme-layer-dark text-theme-text-dark hover:text-theme-red border border-theme-layer-lightest hover:border-theme-red/30"
+                : "bg-light-layer-light text-light-text-light hover:text-theme-red border border-light-border-dark hover:border-theme-red/30"
             }`}
             aria-label={isVisible ? `Hide ${name}` : `Show ${name}`}
           >
